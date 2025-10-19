@@ -9,22 +9,22 @@ class FoodModel {
   FoodModel({
     required this.id,
     required this.name,
+    this.imageUrl,
     required this.description,
     required this.ingredients,
     this.nutritionalInfo,
-    this.imageUrl,
   });
 
   factory FoodModel.fromJson(Map<String, dynamic> json) {
     return FoodModel(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
+      imageUrl: json['imageUrl'],
       description: json['description'] ?? '',
       ingredients: List<String>.from(json['ingredients'] ?? []),
       nutritionalInfo: json['nutritionalInfo'] != null
           ? NutritionalInfo.fromJson(json['nutritionalInfo'])
           : null,
-      imageUrl: json['imageUrl'],
     );
   }
 

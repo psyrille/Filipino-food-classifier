@@ -3,8 +3,9 @@ import '../models/food_model.dart';
 class FoodDatabase {
   static final Map<String, FoodModel> foods = {
     'adobong_manok': FoodModel(
-      id: 'adobong_manok',
+      id: 'adobong_bilat',
       name: 'Adobong Manok',
+      imageUrl: 'assets/images/food/adobong_manok.jpg',
       description:
           'Filipino chicken adobo cooked in soy sauce, vinegar, and garlic',
       ingredients: [
@@ -21,6 +22,7 @@ class FoodDatabase {
     'adobong_pusit': FoodModel(
       id: 'adobong_pusit',
       name: 'Adobong Pusit',
+      imageUrl: 'assets/images/food/adobong_pusit.jpg',
       description: 'Squid cooked adobo-style with its own ink',
       ingredients: [
         'Squid',
@@ -36,6 +38,7 @@ class FoodDatabase {
     'bangus_sisig': FoodModel(
       id: 'bangus_sisig',
       name: 'Bangus Sisig',
+      imageUrl: 'assets/images/food/bangus_sisig.jpg',
       description: 'Sizzling milkfish dish with onions and chili peppers',
       ingredients: [
         'Milkfish (Bangus)',
@@ -51,6 +54,7 @@ class FoodDatabase {
     'bibingka': FoodModel(
       id: 'bibingka',
       name: 'Bibingka',
+      imageUrl: 'assets/images/food/bibingka.jpg',
       description:
           'Traditional Filipino rice cake topped with salted egg and cheese',
       ingredients: [
@@ -67,6 +71,7 @@ class FoodDatabase {
     'chicken_curry': FoodModel(
       id: 'chicken_curry',
       name: 'Chicken Curry',
+      imageUrl: 'assets/images/food/chicken_curry.jpg',
       description:
           'Filipino-style chicken curry with coconut milk and vegetables',
       ingredients: [
@@ -83,6 +88,7 @@ class FoodDatabase {
     'humba': FoodModel(
       id: 'humba',
       name: 'Humba',
+      imageUrl: 'assets/images/food/humba.jpg',
       description: 'Braised pork belly in a sweet and savory sauce',
       ingredients: [
         'Pork Belly',
@@ -98,6 +104,7 @@ class FoodDatabase {
     'kinilaw_na_dilis': FoodModel(
       id: 'kinilaw_na_dilis',
       name: 'Kinilaw na Dilis',
+      imageUrl: 'assets/images/food/kinilaw_na_dilis.jpg',
       description: 'Fresh anchovies ceviche with vinegar and spices',
       ingredients: [
         'Fresh Anchovies',
@@ -113,6 +120,7 @@ class FoodDatabase {
     'otap': FoodModel(
       id: 'otap',
       name: 'Otap',
+      imageUrl: 'assets/images/food/otap.jpg',
       description: 'Crispy oval-shaped puff pastry with sugar coating',
       ingredients: ['Flour', 'Butter', 'Sugar', 'Salt'],
       nutritionalInfo: NutritionalInfo(
@@ -121,6 +129,7 @@ class FoodDatabase {
     'pork_sisig': FoodModel(
       id: 'pork_sisig',
       name: 'Pork Sisig',
+      imageUrl: 'assets/images/food/pork_sisig.jpg',
       description: 'Sizzling chopped pork with onions, perfect with rice',
       ingredients: [
         'Pork Face/Ears',
@@ -137,6 +146,7 @@ class FoodDatabase {
     'sinigang_na_hipon': FoodModel(
       id: 'sinigang_na_hipon',
       name: 'Sinigang na Hipon',
+      imageUrl: 'assets/images/food/sinigang_na_hipon.jpg',
       description: 'Sour shrimp soup with tamarind and vegetables',
       ingredients: [
         'Shrimp',
@@ -153,6 +163,7 @@ class FoodDatabase {
     'taho': FoodModel(
       id: 'taho',
       name: 'Taho',
+      imageUrl: 'assets/images/food/taho.jpg',
       description: 'Sweet tofu dessert with arnibal and sago pearls',
       ingredients: [
         'Silken Tofu',
@@ -165,6 +176,7 @@ class FoodDatabase {
     'halo_halo': FoodModel(
       id: 'halo_halo',
       name: 'Halo Halo',
+      imageUrl: 'assets/images/food/halo_halo.jpg',
       description:
           'Popular Filipino dessert with shaved ice and mixed ingredients',
       ingredients: [
@@ -182,6 +194,7 @@ class FoodDatabase {
     'biko': FoodModel(
       id: 'biko',
       name: 'Biko',
+      imageUrl: 'assets/images/food/biko.jpg',
       description: 'Sweet sticky rice cake with coconut milk',
       ingredients: [
         'Glutinous Rice',
@@ -195,6 +208,7 @@ class FoodDatabase {
     'champorado': FoodModel(
       id: 'champorado',
       name: 'Champorado',
+      imageUrl: 'assets/images/food/champorado.jpg',
       description: 'Chocolate rice porridge, perfect for breakfast',
       ingredients: [
         'Glutinous Rice',
@@ -208,6 +222,7 @@ class FoodDatabase {
     'lechon_baboy': FoodModel(
       id: 'lechon_baboy',
       name: 'Lechon Baboy',
+      imageUrl: 'assets/images/food/lechon_baboy.jpg',
       description: 'Roasted whole pig, crispy skin and tender meat',
       ingredients: [
         'Whole Pig',
@@ -224,6 +239,7 @@ class FoodDatabase {
     'pork_dinuguan': FoodModel(
       id: 'pork_dinuguan',
       name: 'Pork Dinuguan',
+      imageUrl: 'assets/images/food/pork_dinuguan.jpg',
       description: 'Savory pork blood stew with vinegar and spices',
       ingredients: [
         'Pork',
@@ -240,6 +256,7 @@ class FoodDatabase {
     'calamay': FoodModel(
       id: 'calamay',
       name: 'Calamay',
+      imageUrl: 'assets/images/food/calamay.jpg',
       description: 'Sticky sweet delicacy made from coconut milk and rice',
       ingredients: ['Glutinous Rice', 'Coconut Milk', 'Brown Sugar'],
       nutritionalInfo: NutritionalInfo(
@@ -248,6 +265,7 @@ class FoodDatabase {
     'ube_moron': FoodModel(
       id: 'ube_moron',
       name: 'Ube Moron',
+      imageUrl: 'assets/images/food/ube_moron.jpg',
       description: 'Purple yam rice cake wrapped in banana leaves',
       ingredients: [
         'Glutinous Rice',
@@ -262,6 +280,7 @@ class FoodDatabase {
     'tortang_talong': FoodModel(
       id: 'tortang_talong',
       name: 'Tortang Talong',
+      imageUrl: 'assets/images/food/tortang_talong.jpg',
       description: 'Eggplant omelet, simple and delicious',
       ingredients: ['Eggplant', 'Eggs', 'Garlic', 'Onions', 'Salt', 'Pepper'],
       nutritionalInfo: NutritionalInfo(
@@ -270,6 +289,7 @@ class FoodDatabase {
     'beef_bulalo': FoodModel(
       id: 'beef_bulalo',
       name: 'Beef Bulalo',
+      imageUrl: 'assets/images/food/beef_bulalo.jpg',
       description: 'Hearty beef bone marrow soup with vegetables',
       ingredients: [
         'Beef Shanks',
@@ -286,6 +306,7 @@ class FoodDatabase {
     'chopsuey_w_egg': FoodModel(
       id: 'chopsuey_w_egg',
       name: 'Chopsuey w/ egg',
+      imageUrl: 'assets/images/food/chopsuey_with_egg.jpg',
       description: 'Stir-fried mixed vegetables with meat and egg',
       ingredients: [
         'Cabbage',
@@ -303,6 +324,7 @@ class FoodDatabase {
     'pinakbet': FoodModel(
       id: 'pinakbet',
       name: 'Pinakbet',
+      imageUrl: 'assets/images/food/pinakbet.jpg',
       description: 'Mixed vegetables with shrimp paste',
       ingredients: [
         'Squash',
@@ -319,6 +341,7 @@ class FoodDatabase {
     'chicken_kare_kare': FoodModel(
       id: 'chicken_kare_kare',
       name: 'Chicken Kare-kare',
+      imageUrl: 'assets/images/food/chicken_kare_kare.jpg',
       description: 'Chicken in rich peanut sauce with vegetables',
       ingredients: [
         'Chicken',
@@ -335,6 +358,7 @@ class FoodDatabase {
     'palitaw': FoodModel(
       id: 'palitaw',
       name: 'Palitaw',
+      imageUrl: 'assets/images/food/palitaw.jpg',
       description: 'Sweet rice cakes coated with coconut, sugar, and sesame',
       ingredients: [
         'Glutinous Rice Flour',

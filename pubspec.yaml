@@ -49,6 +49,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/images/food/
     - assets/model/model.tflite
     - assets/labels.txt
     - assets/images/
