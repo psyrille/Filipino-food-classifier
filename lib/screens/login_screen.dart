@@ -1,5 +1,6 @@
 import 'package:filipino_food_scanner/screens/home_screen.dart';
 import 'package:filipino_food_scanner/screens/register_screen.dart';
+import 'package:filipino_food_scanner/services/auth_service.dart';
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -10,6 +11,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _authService = AuthService();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
@@ -140,10 +142,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(
-                                builder: (_) => const HomeScreen()),
-                          );
+                          _authService.login(
+                              email: _emailController.text,
+                              password: _passwordController.text,
+                              context: context);
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.orange.shade600,

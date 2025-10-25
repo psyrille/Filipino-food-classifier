@@ -1,14 +1,18 @@
-import 'package:filipino_food_scanner/screens/login_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
+import 'login_screen.dart';
+import 'home_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  const RegisterScreen({Key? key}) : super(key: key);
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
   final _middleNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -34,13 +38,89 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _removeAllergyField(int index) {
     setState(() {
       if (_allergyControllers.length > 1) {
+        _allergyControllers[index].dispose();
         _allergyControllers.removeAt(index);
       }
     });
   }
 
+  Future<void> _register() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    // Check password match
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Passwords do not match'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Collect allergies from all text fields (filter out empty ones)
+    final allergies = _allergyControllers
+        .map((controller) => controller.text.trim())
+        .where((text) => text.isNotEmpty)
+        .toList();
+
+    print('📋 Allergies to save: $allergies'); // Debug
+
+    final authService = context.read<AuthService>();
+
+    final error = await authService.register(
+      context: context,
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+      firstName: _firstNameController.text.trim(),
+      middleName: _middleNameController.text.trim().isEmpty
+          ? null
+          : _middleNameController.text.trim(),
+      lastName: _lastNameController.text.trim(),
+      contactNo: _contactController.text.trim().isEmpty
+          ? null
+          : _contactController.text.trim(),
+      allergies: allergies, // 🎯 ARRAY OF STRINGS
+    );
+
+    if (mounted) {
+      if (error == null) {
+        // Success - navigate to home
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return const AlertDialog(
+              title: Text("Success"),
+              content: Text("You have successfully registered!"),
+            );
+          },
+        );
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _middleNameController.dispose();
+    _lastNameController.dispose();
+    _emailController.dispose();
+    _contactController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    for (var controller in _allergyControllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final authService = context.watch<AuthService>();
+
     return Scaffold(
       body: Stack(
         children: [
@@ -64,199 +144,276 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: SingleChildScrollView(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 30, vertical: 40),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Header
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.shade100,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Icon(
-                            Icons.restaurant,
-                            size: 60,
-                            color: Colors.orange,
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        const Text(
-                          'BantayAllerji',
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2D1B00),
-                          ),
-                        ),
-                        const Text(
-                          'Register',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.orange,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    // --- Personal Info Fields ---
-                    _buildTextField(
-                        _firstNameController, 'First Name', Icons.person),
-                    const SizedBox(height: 15),
-                    _buildTextField(_middleNameController, 'Middle Name',
-                        Icons.person_outline),
-                    const SizedBox(height: 15),
-                    _buildTextField(_lastNameController, 'Last Name',
-                        Icons.person_2_outlined),
-                    const SizedBox(height: 15),
-                    _buildTextField(_emailController, 'Email', Icons.email,
-                        TextInputType.emailAddress),
-                    const SizedBox(height: 15),
-                    _buildTextField(_contactController, 'Contact Number',
-                        Icons.phone, TextInputType.phone),
-                    const SizedBox(height: 20),
-
-                    // --- Password Fields ---
-                    _buildPasswordField(
-                      controller: _passwordController,
-                      label: 'Password',
-                      isVisible: _isPasswordVisible,
-                      onToggle: () => setState(
-                          () => _isPasswordVisible = !_isPasswordVisible),
-                    ),
-                    const SizedBox(height: 15),
-                    _buildPasswordField(
-                      controller: _confirmPasswordController,
-                      label: 'Confirm Password',
-                      isVisible: _isConfirmPasswordVisible,
-                      onToggle: () => setState(() => _isConfirmPasswordVisible =
-                          !_isConfirmPasswordVisible),
-                    ),
-
-                    const SizedBox(height: 25),
-
-                    // --- Allergies Section ---
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Allergies',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2D1B00),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: _addAllergyField,
-                          icon: const Icon(Icons.add_circle,
-                              color: Colors.orange, size: 30),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-
-                    // Dynamic allergy inputs
-                    Column(
-                      children:
-                          List.generate(_allergyControllers.length, (index) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: _allergyControllers[index],
-                                  decoration: InputDecoration(
-                                    hintText: 'Enter allergy...',
-                                    prefixIcon: const Icon(Icons.warning_amber,
-                                        color: Colors.orange),
-                                    filled: true,
-                                    fillColor: Colors.white,
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        vertical: 16, horizontal: 20),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(15),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              if (_allergyControllers.length > 1)
-                                IconButton(
-                                  onPressed: () => _removeAllergyField(index),
-                                  icon: const Icon(Icons.remove_circle,
-                                      color: Colors.redAccent),
-                                ),
-                            ],
-                          ),
-                        );
-                      }),
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    // --- Register Button ---
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          // Handle registration logic
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange.shade600,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          elevation: 5,
-                        ),
-                        child: const Text(
-                          'Register',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 25),
-
-                    // --- Login Link ---
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          "Already have an account?",
-                          style: TextStyle(
-                            color: Color(0xFF2D1B00),
-                            fontSize: 14,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(
-                                  builder: (_) => const LoginScreen()),
-                            );
-                          },
-                          child: const Text(
-                            "Login",
-                            style: TextStyle(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Header
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.shade100,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Icon(
+                              Icons.restaurant,
+                              size: 60,
                               color: Colors.orange,
-                              fontWeight: FontWeight.bold,
                             ),
                           ),
+                          const SizedBox(height: 15),
+                          const Text(
+                            'BantayAllerji',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF2D1B00),
+                            ),
+                          ),
+                          const Text(
+                            'Register',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.orange,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      // --- Personal Info Fields ---
+                      _buildTextField(
+                        controller: _firstNameController,
+                        label: 'First Name',
+                        icon: Icons.person,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your first name';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 15),
+                      _buildTextField(
+                        controller: _middleNameController,
+                        label: 'Middle Name (Optional)',
+                        icon: Icons.person_outline,
+                      ),
+                      const SizedBox(height: 15),
+                      _buildTextField(
+                        controller: _lastNameController,
+                        label: 'Last Name',
+                        icon: Icons.person_2_outlined,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your last name';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 15),
+                      _buildTextField(
+                        controller: _emailController,
+                        label: 'Email',
+                        icon: Icons.email,
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your email';
+                          }
+                          if (!value.contains('@')) {
+                            return 'Please enter a valid email';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 15),
+                      _buildTextField(
+                        controller: _contactController,
+                        label: 'Contact Number (Optional)',
+                        icon: Icons.phone,
+                        keyboardType: TextInputType.phone,
+                      ),
+                      const SizedBox(height: 20),
+
+                      // --- Password Fields ---
+                      _buildPasswordField(
+                        controller: _passwordController,
+                        label: 'Password',
+                        isVisible: _isPasswordVisible,
+                        onToggle: () => setState(
+                            () => _isPasswordVisible = !_isPasswordVisible),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a password';
+                          }
+                          if (value.length < 6) {
+                            return 'Password must be at least 6 characters';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 15),
+                      _buildPasswordField(
+                        controller: _confirmPasswordController,
+                        label: 'Confirm Password',
+                        isVisible: _isConfirmPasswordVisible,
+                        onToggle: () => setState(() =>
+                            _isConfirmPasswordVisible =
+                                !_isConfirmPasswordVisible),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please confirm your password';
+                          }
+                          return null;
+                        },
+                      ),
+
+                      const SizedBox(height: 25),
+
+                      // --- Allergies Section ---
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(color: Colors.orange.shade200),
                         ),
-                      ],
-                    ),
-                  ],
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Allergies',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF2D1B00),
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: _addAllergyField,
+                                  icon: const Icon(Icons.add_circle,
+                                      color: Colors.orange, size: 30),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+
+                            // Dynamic allergy inputs
+                            Column(
+                              children: List.generate(
+                                  _allergyControllers.length, (index) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: TextField(
+                                          controller:
+                                              _allergyControllers[index],
+                                          decoration: InputDecoration(
+                                            hintText: 'e.g., Peanuts, Seafood',
+                                            prefixIcon: const Icon(
+                                                Icons.warning_amber,
+                                                color: Colors.orange),
+                                            filled: true,
+                                            fillColor: Colors.white,
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                                    vertical: 16,
+                                                    horizontal: 20),
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(15),
+                                              borderSide: BorderSide.none,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      if (_allergyControllers.length > 1)
+                                        IconButton(
+                                          onPressed: () =>
+                                              _removeAllergyField(index),
+                                          icon: const Icon(Icons.remove_circle,
+                                              color: Colors.redAccent),
+                                        ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 30),
+
+                      // --- Register Button ---
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: authService.isLoading ? null : _register,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange.shade600,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            elevation: 5,
+                          ),
+                          child: authService.isLoading
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white)
+                              : const Text(
+                                  'Register',
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 25),
+
+                      // --- Login Link ---
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            "Already have an account?",
+                            style: TextStyle(
+                              color: Color(0xFF2D1B00),
+                              fontSize: 14,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pushReplacement(
+                                MaterialPageRoute(
+                                    builder: (_) => const LoginScreen()),
+                              );
+                            },
+                            child: const Text(
+                              "Login",
+                              style: TextStyle(
+                                color: Colors.orange,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -266,13 +423,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // 🔸 Reusable text field builder
-  Widget _buildTextField(
-      TextEditingController controller, String label, IconData icon,
-      [TextInputType keyboardType = TextInputType.text]) {
-    return TextField(
+  // 🔸 Reusable text field builder with validation
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
+      validator: validator,
       decoration: InputDecoration(
         prefixIcon: Icon(icon, color: Colors.orange),
         hintText: label,
@@ -288,16 +450,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // 🔸 Password field with visibility toggle
+  // 🔸 Password field with visibility toggle and validation
   Widget _buildPasswordField({
     required TextEditingController controller,
     required String label,
     required bool isVisible,
     required VoidCallback onToggle,
+    String? Function(String?)? validator,
   }) {
-    return TextField(
+    return TextFormField(
       controller: controller,
       obscureText: !isVisible,
+      validator: validator,
       decoration: InputDecoration(
         prefixIcon: const Icon(Icons.lock, color: Colors.orange),
         suffixIcon: IconButton(

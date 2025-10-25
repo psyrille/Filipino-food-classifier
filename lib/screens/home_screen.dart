@@ -1,6 +1,8 @@
 import 'package:filipino_food_scanner/screens/login_screen.dart';
+import 'package:filipino_food_scanner/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:io';
 import 'result_screen.dart';
 import '../services/ml_service.dart';
@@ -23,6 +25,10 @@ class _HomeScreenState extends State<HomeScreen> {
   late List<FoodModel> _filteredFoods;
   final _searchController = TextEditingController();
 
+  //For User
+  final supabase = Supabase.instance.client;
+  Session? get session => supabase.auth.currentSession;
+
   @override
   void initState() {
     super.initState();
@@ -36,6 +42,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Listen to search input
     _searchController.addListener(_filterFoods);
+
+    print('Current session: $session');
   }
 
   void _filterFoods() {
@@ -287,6 +295,11 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final foods = _filteredFoods;
+    final authService = context.watch<AuthService>();
+    final user = authService.currentUser;
+
+    final userName =
+        user != null ? 'Hi, ${user.firstName}!' : 'Food classifier';
 
     return Scaffold(
       appBar: AppBar(
@@ -310,9 +323,8 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.logout, color: Colors.orange),
             onPressed: () async {
               if (mounted) {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                );
+                final _authService = AuthService();
+                _authService.logout(context);
               }
             },
           ),
@@ -357,11 +369,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         const SizedBox(width: 15),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
+                              const Text(
                                 'BantayAllerji',
                                 style: TextStyle(
                                   fontSize: 28,
@@ -370,8 +382,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                               Text(
-                                'Scanner',
-                                style: TextStyle(
+                                userName,
+                                style: const TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.w500,
                                   color: Colors.orange,
