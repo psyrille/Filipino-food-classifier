@@ -122,7 +122,15 @@ class FoodDatabase {
       name: 'Otap',
       imageUrl: 'assets/images/food/otap.jpg',
       description: 'Crispy oval-shaped puff pastry with sugar coating',
-      ingredients: ['Flour', 'Butter', 'Sugar', 'Salt'],
+      ingredients: [
+        'Flour',
+        'Butter',
+        'Sugar',
+        'Salt',
+        'Egg',
+        'Shrimp',
+        'Squid'
+      ],
       nutritionalInfo: NutritionalInfo(
           calories: 200, protein: '3g', carbs: '28g', fat: '9g'),
     ),
