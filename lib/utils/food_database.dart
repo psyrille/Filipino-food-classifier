@@ -3,7 +3,7 @@ import '../models/food_model.dart';
 class FoodDatabase {
   static final Map<String, FoodModel> foods = {
     'adobong_manok': FoodModel(
-      id: 'adobong_bilat',
+      id: 'adobong_manok',
       name: 'Adobong Manok',
       imageUrl: 'assets/images/food/adobong_manok.jpg',
       description:
@@ -128,8 +128,6 @@ class FoodDatabase {
         'Sugar',
         'Salt',
         'Egg',
-        'Shrimp',
-        'Squid'
       ],
       nutritionalInfo: NutritionalInfo(
           calories: 200, protein: '3g', carbs: '28g', fat: '9g'),
@@ -270,21 +268,6 @@ class FoodDatabase {
       nutritionalInfo: NutritionalInfo(
           calories: 260, protein: '3g', carbs: '48g', fat: '7g'),
     ),
-    'ube_moron': FoodModel(
-      id: 'ube_moron',
-      name: 'Ube Moron',
-      imageUrl: 'assets/images/food/ube_moron.jpg',
-      description: 'Purple yam rice cake wrapped in banana leaves',
-      ingredients: [
-        'Glutinous Rice',
-        'Ube (Purple Yam)',
-        'Coconut Milk',
-        'Sugar',
-        'Banana Leaves'
-      ],
-      nutritionalInfo: NutritionalInfo(
-          calories: 270, protein: '4g', carbs: '50g', fat: '6g'),
-    ),
     'tortang_talong': FoodModel(
       id: 'tortang_talong',
       name: 'Tortang Talong',
@@ -329,23 +312,23 @@ class FoodDatabase {
       nutritionalInfo: NutritionalInfo(
           calories: 280, protein: '18g', carbs: '20g', fat: '14g'),
     ),
-    'pinakbet': FoodModel(
-      id: 'pinakbet',
-      name: 'Pinakbet',
-      imageUrl: 'assets/images/food/pinakbet.jpg',
-      description: 'Mixed vegetables with shrimp paste',
-      ingredients: [
-        'Squash',
-        'Eggplant',
-        'Okra',
-        'String Beans',
-        'Bitter Gourd',
-        'Tomatoes',
-        'Shrimp Paste'
-      ],
-      nutritionalInfo: NutritionalInfo(
-          calories: 180, protein: '8g', carbs: '25g', fat: '6g'),
-    ),
+    // 'pinakbet': FoodModel(
+    //   id: 'pinakbet',
+    //   name: 'Pinakbet',
+    //   imageUrl: 'assets/images/food/pinakbet.jpg',
+    //   description: 'Mixed vegetables with shrimp paste',
+    //   ingredients: [
+    //     'Squash',
+    //     'Eggplant',
+    //     'Okra',
+    //     'String Beans',
+    //     'Bitter Gourd',
+    //     'Tomatoes',
+    //     'Shrimp Paste'
+    //   ],
+    //   nutritionalInfo: NutritionalInfo(
+    //       calories: 180, protein: '8g', carbs: '25g', fat: '6g'),
+    // ),
     'chicken_kare_kare': FoodModel(
       id: 'chicken_kare_kare',
       name: 'Chicken Kare-kare',
@@ -377,6 +360,23 @@ class FoodDatabase {
       ],
       nutritionalInfo: NutritionalInfo(
           calories: 200, protein: '3g', carbs: '38g', fat: '5g'),
+    ),
+    'ube_moron': FoodModel(
+      id: 'ube_moron',
+      name: 'Ube Moron',
+      imageUrl: 'assets/images/food/ube_moron.jpg',
+      description:
+          'Ube moron is made from ground glutinous rice, coconut milk, sugar, and ube (purple yam), giving it a rich, creamy, and slightly chewy texture.',
+      ingredients: [
+        'Glutinous Rice Flour',
+        'Regular Rice Flour',
+        'Grated Ube (Purple Yam)',
+        'Coconut Milk',
+        'White Sugar',
+        'Condensed Milk',
+        'Evaporated milk (optional)',
+        'Salt',
+      ],
     ),
   };
 

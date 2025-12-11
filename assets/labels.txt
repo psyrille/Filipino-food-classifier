@@ -1,24 +1,22 @@
-0 Adobong Manok
-1 Adobong Pusit
-2 Bangus Sisig
-3 Bibingka
-4 Chicken Curry
-5 Humba
-6 Kinilaw na Dilis
-7 Otap
-8 Pork Sisig
-9 Sinigang na Hipon
-10 Taho
-11 Halo Halo
-12 Biko
-13 Champorado
-14 Lechon Baboy
-15 Pork Dinuguan
-16 Calamay
-17 Ube Moron
-18 Tortang Talong
-19 Beef Bulalo
-20 Chopsuey w/ egg
-21 Pinakbet
-22 Chicken Kare-kare
-23 Palitaw
+Adobong Manok
+Adobong Pusit
+Bangus Sisig
+Bibingka
+Chicken Curry
+Humba
+Kinilaw na Dilis
+Otap
+Pork Sisig
+Sinigang na Hipon
+Biko
+Calamay
+Champorado
+Chop Suey with Egg
+Halo halo
+Chicken Kare-kare
+Letchon Baboy
+Pork Dinuguan
+Taho
+Tortang Talong
+Palitaw
+Ube Moron

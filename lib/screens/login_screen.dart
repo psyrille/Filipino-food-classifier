@@ -1,3 +1,4 @@
+import 'package:filipino_food_scanner/screens/forgot_password_screen.dart';
 import 'package:filipino_food_scanner/screens/home_screen.dart';
 import 'package:filipino_food_scanner/screens/register_screen.dart';
 import 'package:filipino_food_scanner/services/auth_service.dart';
@@ -16,22 +17,34 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
 
+  bool _isLoading = false;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
           // Background gradient
+          // Container(
+          //   decoration: const BoxDecoration(
+          //     gradient: LinearGradient(
+          //       begin: Alignment.topLeft,
+          //       end: Alignment.bottomRight,
+          //       colors: [
+          //         Color(0xFFFFF4E6),
+          //         Color(0xFFFFE8CC),
+          //         Color(0xFFFFDDB3),
+          //       ],
+          //     ),
+          //   ),
+          // ),
+
           Container(
             decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFFFFF4E6),
-                  Color(0xFFFFE8CC),
-                  Color(0xFFFFDDB3),
-                ],
+              image: DecorationImage(
+                image: AssetImage('assets/images/bg/1.jpg'),
+                opacity: 0.25,
+                fit: BoxFit.cover,
               ),
             ),
           ),
@@ -49,16 +62,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.shade100,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Icon(
-                            Icons.restaurant,
-                            size: 60,
-                            color: Colors.orange,
+                        ClipOval(
+                          child: Image.asset(
+                            'assets/images/logos/main.png',
+                            width: 150,
+                            height: 150,
+                            fit: BoxFit.cover,
                           ),
                         ),
                         const SizedBox(height: 15),
@@ -141,12 +150,19 @@ class _LoginScreenState extends State<LoginScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () {
-                          _authService.login(
-                              email: _emailController.text,
-                              password: _passwordController.text,
-                              context: context);
-                        },
+                        onPressed: _isLoading
+                            ? null
+                            : () async {
+                                setState(() => _isLoading = true);
+
+                                await _authService.login(
+                                  email: _emailController.text,
+                                  password: _passwordController.text,
+                                  context: context,
+                                );
+
+                                setState(() => _isLoading = false);
+                              },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.orange.shade600,
                           foregroundColor: Colors.white,
@@ -156,15 +172,38 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           elevation: 5,
                         ),
-                        child: const Text(
-                          'Login',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white),
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                            : const Text(
+                                'Login',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                              builder: (_) => const ForgotPasswordScreen()),
+                        );
+                      },
+                      child: const Text(
+                        "Forgot Password?",
+                        style: TextStyle(
+                          color: Colors.orange,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-
-                    const SizedBox(height: 25),
 
                     // Register link
                     Row(
@@ -190,6 +229,30 @@ class _LoginScreenState extends State<LoginScreen> {
                               color: Colors.orange,
                               fontWeight: FontWeight.bold,
                             ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(
+                      height: 15,
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ClipOval(
+                          child: Image.asset(
+                            'assets/images/logos/slsu.png',
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        ClipOval(
+                          child: Image.asset(
+                            'assets/images/logos/foodtech.png',
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
                           ),
                         ),
                       ],

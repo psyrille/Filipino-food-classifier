@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
@@ -23,6 +24,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
+
+  Future<void> _requestLocationPermission() async {
+    // Check permission
+    LocationPermission permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      // User permanently denied permission
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              "Location permission permanently denied. Please enable it in Settings."),
+        ),
+      );
+      return;
+    }
+
+    // Check if location services (GPS) are enabled
+    bool isLocationEnabled = await Geolocator.isLocationServiceEnabled();
+
+    if (!isLocationEnabled) {
+      await Geolocator.openLocationSettings();
+      return;
+    }
+
+    // Everything OK → ask for current location (optional)
+    final position = await Geolocator.getCurrentPosition();
+
+    print("Location granted: ${position.latitude}, ${position.longitude}");
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Location access enabled!"),
+      ),
+    );
+  }
 
   // List of allergy text fields
   final List<TextEditingController> _allergyControllers = [
@@ -125,16 +165,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: Stack(
         children: [
           // Background gradient
+          // Container(
+          //   decoration: const BoxDecoration(
+          //     gradient: LinearGradient(
+          //       begin: Alignment.topLeft,
+          //       end: Alignment.bottomRight,
+          //       colors: [
+          //         Color(0xFFFFF4E6),
+          //         Color(0xFFFFE8CC),
+          //         Color(0xFFFFDDB3),
+          //       ],
+          //     ),
+          //   ),
+          // ),
           Container(
             decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFFFFF4E6),
-                  Color(0xFFFFE8CC),
-                  Color(0xFFFFDDB3),
-                ],
+              image: DecorationImage(
+                image: AssetImage('assets/images/bg/2.jpg'),
+                opacity: 0.25,
+                fit: BoxFit.cover,
               ),
             ),
           ),
@@ -153,16 +202,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.shade100,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Icon(
-                              Icons.restaurant,
-                              size: 60,
-                              color: Colors.orange,
+                          ClipOval(
+                            child: Image.asset(
+                              'assets/images/logos/main.png',
+                              width: 150,
+                              height: 150,
+                              fit: BoxFit.cover,
                             ),
                           ),
                           const SizedBox(height: 15),
@@ -291,7 +336,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 const Text(
-                                  'Allergies',
+                                  'What are your allergies?',
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
@@ -320,7 +365,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           controller:
                                               _allergyControllers[index],
                                           decoration: InputDecoration(
-                                            hintText: 'e.g., Peanuts, Seafood',
+                                            hintText:
+                                                'e.g., Peanuts, Shrimp, Squid',
                                             prefixIcon: const Icon(
                                                 Icons.warning_amber,
                                                 color: Colors.orange),
@@ -349,6 +395,82 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ),
                                 );
                               }),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(color: Colors.orange.shade200),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Circular info icon
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.orange,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.info,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+
+                                // Expandable text
+                                Expanded(
+                                  child: Text(
+                                    'For Red tide and ASF warnings, kindly turn-on your device location.',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF2D1B00),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            // Turn On Location Button
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                ElevatedButton.icon(
+                                  onPressed: _requestLocationPermission,
+                                  icon: const Icon(Icons.location_on,
+                                      color: Colors.white),
+                                  label: const Text(
+                                    "Turn On Location",
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.orange,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 20, vertical: 14),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),

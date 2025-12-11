@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:filipino_food_scanner/screens/home_screen.dart';
 import 'package:filipino_food_scanner/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService extends ChangeNotifier {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -13,6 +16,63 @@ class AuthService extends ChangeNotifier {
   UserModel? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _currentUser != null;
+
+  Future<String?> sendPasswordResetEmail(String email) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      await _supabase.auth.resetPasswordForEmail(
+        email,
+        redirectTo:
+            'io.supabase.bantayallerji://reset-password', // Your app's deep link
+      );
+
+      _isLoading = false;
+      notifyListeners();
+      return null; // Success
+    } on AuthException catch (e) {
+      _isLoading = false;
+      notifyListeners();
+
+      // Handle specific Supabase auth errors
+      switch (e.statusCode) {
+        case '400':
+          return 'Invalid email address';
+        case '429':
+          return 'Too many requests. Please try again later';
+        default:
+          return e.message;
+      }
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return 'An unexpected error occurred. Please try again';
+    }
+  }
+
+  Future<String?> resetPassword(String newPassword) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      await _supabase.auth.updateUser(
+        UserAttributes(password: newPassword),
+      );
+
+      _isLoading = false;
+      notifyListeners();
+      return null; // Success
+    } on AuthException catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return e.message;
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return 'Failed to reset password. Please try again';
+    }
+  }
 
   Widget showAlert(context, String title, String content) {
     return AlertDialog(
@@ -29,11 +89,8 @@ class AuthService extends ChangeNotifier {
     );
   }
 
-  // Initialize and check current session
   Future<void> initialize() async {
     try {
-      print('🔍 Checking for existing session...');
-
       final session = _supabase.auth.currentSession;
 
       if (session != null) {
@@ -147,69 +204,104 @@ class AuthService extends ChangeNotifier {
   Future<String?> login(
       {required String email, required String password, context}) async {
     try {
+      // Check for internet connectivity
+      try {
+        final result = await InternetAddress.lookup('example.com');
+        if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+          print('connected');
+        }
+      } on SocketException catch (_) {
+        return showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return showAlert(context, "Error", "No internet connection");
+          },
+        );
+      }
+
       _isLoading = true;
       notifyListeners();
 
-      print('🔐 Logging in: $email');
-
+      // Attempt to sign in with the provided credentials
       final AuthResponse response = await _supabase.auth.signInWithPassword(
         email: email,
         password: password,
       );
 
+      // If no user is returned, the login failed
       if (response.user == null) {
         _isLoading = false;
         notifyListeners();
         return 'Login failed';
       }
 
-      print('✅ Login successful');
+      final session = _supabase.auth.currentSession;
 
-      // Load user profile
-      await _loadUserProfile(response.user!.id);
+      if (session != null && session.accessToken.isNotEmpty) {
+        await _loadUserProfile(response.user!.id);
 
-      _isLoading = false;
-      notifyListeners();
+        _isLoading = false;
+        notifyListeners();
 
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
 
-      return null;
+        return null;
+      } else {
+        // Handle invalid session
+        _isLoading = false;
+        notifyListeners();
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return showAlert(
+                context, "Error", "Session is not valid. Please log in again.");
+          },
+        );
+        return 'Session error';
+      }
     } on AuthException catch (e) {
       _isLoading = false;
       notifyListeners();
       showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return showAlert(context, "Error", e.message);
-          });
+        context: context,
+        builder: (BuildContext context) {
+          return showAlert(context, "Error", e.message);
+        },
+      );
       return e.message;
     } catch (e) {
       _isLoading = false;
       notifyListeners();
       showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return showAlert(context, "Error", "Please try again");
-          });
+        context: context,
+        builder: (BuildContext context) {
+          return showAlert(context, "Error", "Please try again");
+        },
+      );
       return 'Login failed: $e';
     }
   }
 
-  // Load user profile from database
+  Future<void> storeSession(AuthResponse response) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Store the session token, user ID, or any other necessary data
+    await prefs.setString('access_token', response.session?.accessToken ?? '');
+    await prefs.setString('user_id', response.user?.id ?? '');
+    await prefs.setBool('is_logged_in', true); // Mark as logged in
+  }
+
   Future<void> _loadUserProfile(String userId) async {
     try {
-      print('📥 Loading profile for: $userId');
-
       final response =
           await _supabase.from('profiles').select().eq('id', userId).single();
 
       _currentUser = UserModel.fromJson(response);
-      print('✅ Profile loaded: ${_currentUser!.fullName}');
       notifyListeners();
     } catch (e) {
-      print('❌ Error loading profile: $e');
+      print(e);
     }
   }
 
@@ -239,13 +331,12 @@ class AuthService extends ChangeNotifier {
           .update(updates)
           .eq('id', _currentUser!.id);
 
-      // Reload profile
       await _loadUserProfile(_currentUser!.id);
 
       _isLoading = false;
       notifyListeners();
 
-      return null; // Success
+      return null;
     } catch (e) {
       _isLoading = false;
       notifyListeners();
@@ -262,21 +353,20 @@ class AuthService extends ChangeNotifier {
         MaterialPageRoute(builder: (_) => const LoginScreen()),
       );
       notifyListeners();
-      print('✅ Logged out');
     } catch (e) {
-      print('❌ Logout error: $e');
+      print("Error ${e}");
     }
   }
 
-  // Reset password
-  Future<String?> resetPassword(String email) async {
-    try {
-      await _supabase.auth.resetPasswordForEmail(email);
-      return null; // Success
-    } on AuthException catch (e) {
-      return e.message;
-    } catch (e) {
-      return 'Password reset failed: $e';
-    }
-  }
+  // // Reset password
+  // Future<String?> resetPassword(String email) async {
+  //   try {
+  //     await _supabase.auth.resetPasswordForEmail(email);
+  //     return null; // Success
+  //   } on AuthException catch (e) {
+  //     return e.message;
+  //   } catch (e) {
+  //     return 'Password reset failed: $e';
+  //   }
+  // }
 }
