@@ -1,3 +1,4 @@
+import 'package:filipino_food_scanner/utils/allergen_database.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
@@ -24,23 +25,21 @@ class ResultScreen extends StatelessWidget {
     List<String> foundAllergens = [];
 
     if (user != null && user.allergies.isNotEmpty) {
-      for (var ingredient in result.food.ingredients) {
-        for (var allergy in user.allergies) {
-          if (ingredient.toLowerCase().contains(allergy.toLowerCase())) {
-            hasAllergen = true;
-            if (!foundAllergens.contains(allergy)) {
-              foundAllergens.add(allergy);
-            }
-          }
-        }
-      }
+      // Use the new allergen detection system
+      final allergenResult = AllergenDatabase.checkIngredientsForAllergens(
+        result.food.ingredients,
+        user.allergies,
+      );
+
+      foundAllergens = allergenResult['foundAllergens'] ?? [];
+      hasAllergen = foundAllergens.isNotEmpty;
     }
 
     return Scaffold(
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [
-          // 🔳 Background image
+          // Background image
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
@@ -158,7 +157,7 @@ class ResultScreen extends StatelessWidget {
                                         CrossAxisAlignment.start,
                                     children: [
                                       const Text(
-                                        'Detected Allergens:',
+                                        'Detected Allergen Categories:',
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           color: Colors.red,
@@ -169,11 +168,12 @@ class ResultScreen extends StatelessWidget {
                                       Wrap(
                                         spacing: 8,
                                         runSpacing: 8,
-                                        children: foundAllergens.map((allergy) {
+                                        children:
+                                            foundAllergens.map((allergen) {
                                           return Container(
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 12,
-                                              vertical: 6,
+                                              vertical: 8,
                                             ),
                                             decoration: BoxDecoration(
                                               color: Colors.red,
@@ -183,18 +183,27 @@ class ResultScreen extends StatelessWidget {
                                             child: Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                const Icon(
-                                                  Icons.close,
-                                                  color: Colors.white,
-                                                  size: 16,
-                                                ),
-                                                const SizedBox(width: 4),
                                                 Text(
-                                                  allergy,
+                                                  AllergenDatabase
+                                                      .getAllergenIcon(
+                                                          allergen),
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 6),
+                                                Text(
+                                                  allergen,
                                                   style: const TextStyle(
                                                     color: Colors.white,
                                                     fontWeight: FontWeight.bold,
                                                   ),
+                                                ),
+                                                const SizedBox(width: 4),
+                                                const Icon(
+                                                  Icons.close,
+                                                  color: Colors.white,
+                                                  size: 16,
                                                 ),
                                               ],
                                             ),
@@ -325,10 +334,16 @@ class ResultScreen extends StatelessWidget {
                               ),
                               const SizedBox(height: 15),
                               ...result.food.ingredients.map((ingredient) {
-                                final isAllergen = user != null &&
-                                    user.allergies.any((allergy) => ingredient
-                                        .toLowerCase()
-                                        .contains(allergy.toLowerCase()));
+                                // Check if this specific ingredient contains allergens
+                                final ingredientAllergens = user != null
+                                    ? AllergenDatabase.detectAllergens(
+                                        ingredient,
+                                        user.allergies,
+                                      )
+                                    : <String>[];
+                                final isAllergen =
+                                    ingredientAllergens.isNotEmpty;
+
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 8.0),
                                   child: Row(
@@ -348,18 +363,58 @@ class ResultScreen extends StatelessWidget {
                                         ),
                                       ),
                                       Expanded(
-                                        child: Text(
-                                          ingredient,
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            color: isAllergen
-                                                ? Colors.red
-                                                : const Color(0xFF2D1B00),
-                                            fontWeight: isAllergen
-                                                ? FontWeight.bold
-                                                : FontWeight.normal,
-                                            height: 1.5,
-                                          ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              ingredient,
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                color: isAllergen
+                                                    ? Colors.red
+                                                    : const Color(0xFF2D1B00),
+                                                fontWeight: isAllergen
+                                                    ? FontWeight.bold
+                                                    : FontWeight.normal,
+                                                height: 1.5,
+                                              ),
+                                            ),
+                                            if (isAllergen)
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                    top: 4),
+                                                child: Wrap(
+                                                  spacing: 4,
+                                                  children: ingredientAllergens
+                                                      .map((category) {
+                                                    return Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 2,
+                                                      ),
+                                                      decoration: BoxDecoration(
+                                                        color:
+                                                            Colors.red.shade100,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(8),
+                                                      ),
+                                                      child: Text(
+                                                        '${AllergenDatabase.getAllergenIcon(category)} $category',
+                                                        style: const TextStyle(
+                                                          fontSize: 11,
+                                                          color: Colors.red,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }).toList(),
+                                                ),
+                                              ),
+                                          ],
                                         ),
                                       ),
                                       if (isAllergen)

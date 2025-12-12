@@ -27,7 +27,7 @@ dependencies:
   http: ^1.1.0
   dio: ^5.4.0
 
-  connectivity_plus: ^4.0.1
+  connectivity_plus: ^5.0.2  # Add this for network detection
 
   # State Management
   provider: ^6.1.0

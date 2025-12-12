@@ -1,5 +1,7 @@
 import 'package:filipino_food_scanner/screens/login_screen.dart';
+import 'package:filipino_food_scanner/screens/profile.dart';
 import 'package:filipino_food_scanner/services/auth_service.dart';
+import 'package:filipino_food_scanner/utils/allergen_database.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -232,21 +234,19 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  void _showFoodModal(FoodModel food, allergies) {
+  void _showFoodModal(FoodModel food, List<String>? allergies) {
     List<String> foundAllergens = [];
     bool hasAllergen = false;
 
-    if (allergies.isNotEmpty) {
-      for (var ingredient in food.ingredients) {
-        for (var allergy in allergies) {
-          if (ingredient.toLowerCase().contains(allergy.toLowerCase())) {
-            hasAllergen = true;
-            if (!foundAllergens.contains(allergy)) {
-              foundAllergens.add(allergy);
-            }
-          }
-        }
-      }
+    if (allergies != null && allergies.isNotEmpty) {
+      // Use the new allergen detection system
+      final result = AllergenDatabase.checkIngredientsForAllergens(
+        food.ingredients,
+        allergies,
+      );
+
+      foundAllergens = result['foundAllergens'] ?? [];
+      hasAllergen = foundAllergens.isNotEmpty;
     }
 
     showDialog(
@@ -264,7 +264,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20)),
                       child: ClipRRect(
-                        borderRadius: BorderRadiusGeometry.circular(12),
+                        borderRadius: BorderRadius.circular(12),
                         child: Container(
                           decoration: const BoxDecoration(
                             gradient: LinearGradient(
@@ -383,7 +383,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                               .start,
                                                       children: [
                                                         const Text(
-                                                          'Detected Allergens:',
+                                                          'Detected Allergen Categories:',
                                                           style: TextStyle(
                                                             fontWeight:
                                                                 FontWeight.bold,
@@ -398,13 +398,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                                           runSpacing: 8,
                                                           children:
                                                               foundAllergens.map(
-                                                                  (allergy) {
+                                                                  (allergen) {
                                                             return Container(
                                                               padding:
                                                                   const EdgeInsets
                                                                       .symmetric(
                                                                 horizontal: 12,
-                                                                vertical: 6,
+                                                                vertical: 8,
                                                               ),
                                                               decoration:
                                                                   BoxDecoration(
@@ -420,16 +420,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                     MainAxisSize
                                                                         .min,
                                                                 children: [
-                                                                  const Icon(
-                                                                    Icons.close,
-                                                                    color: Colors
-                                                                        .white,
-                                                                    size: 16,
+                                                                  Text(
+                                                                    AllergenDatabase
+                                                                        .getAllergenIcon(
+                                                                            allergen),
+                                                                    style:
+                                                                        const TextStyle(
+                                                                      fontSize:
+                                                                          16,
+                                                                    ),
                                                                   ),
                                                                   const SizedBox(
-                                                                      width: 4),
+                                                                      width: 6),
                                                                   Text(
-                                                                    allergy,
+                                                                    allergen,
                                                                     style:
                                                                         const TextStyle(
                                                                       color: Colors
@@ -438,6 +442,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                           FontWeight
                                                                               .bold,
                                                                     ),
+                                                                  ),
+                                                                  const SizedBox(
+                                                                      width: 4),
+                                                                  const Icon(
+                                                                    Icons.close,
+                                                                    color: Colors
+                                                                        .white,
+                                                                    size: 16,
                                                                   ),
                                                                 ],
                                                               ),
@@ -452,9 +464,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                             ),
 
                                           // Image
-                                          const SizedBox(
-                                            height: 30,
-                                          ),
+                                          const SizedBox(height: 30),
                                           ClipRRect(
                                             borderRadius:
                                                 BorderRadius.circular(15),
@@ -552,11 +562,19 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 const SizedBox(height: 15),
                                                 ...food.ingredients
                                                     .map((ingredient) {
-                                                  final isAllergen = allergies
-                                                      .any((allergy) => ingredient
-                                                          .toLowerCase()
-                                                          .contains(allergy
-                                                              .toLowerCase()));
+                                                  // Check if this specific ingredient contains allergens
+                                                  final ingredientAllergens =
+                                                      allergies != null
+                                                          ? AllergenDatabase
+                                                              .detectAllergens(
+                                                              ingredient,
+                                                              allergies,
+                                                            )
+                                                          : <String>[];
+                                                  final isAllergen =
+                                                      ingredientAllergens
+                                                          .isNotEmpty;
+
                                                   return Padding(
                                                     padding:
                                                         const EdgeInsets.only(
@@ -575,23 +593,84 @@ class _HomeScreenState extends State<HomeScreen> {
                                                           width: 8,
                                                           height: 8,
                                                           decoration:
-                                                              const BoxDecoration(
-                                                            color:
-                                                                Colors.orange,
+                                                              BoxDecoration(
+                                                            color: isAllergen
+                                                                ? Colors.red
+                                                                : Colors.orange,
                                                             shape:
                                                                 BoxShape.circle,
                                                           ),
                                                         ),
                                                         Expanded(
-                                                          child: Text(
-                                                            ingredient,
-                                                            style:
-                                                                const TextStyle(
-                                                              fontSize: 16,
-                                                              color: Color(
-                                                                  0xFF2D1B00),
-                                                              height: 1.5,
-                                                            ),
+                                                          child: Column(
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                            children: [
+                                                              Text(
+                                                                ingredient,
+                                                                style:
+                                                                    TextStyle(
+                                                                  fontSize: 16,
+                                                                  color: isAllergen
+                                                                      ? Colors
+                                                                          .red
+                                                                      : const Color(
+                                                                          0xFF2D1B00),
+                                                                  fontWeight: isAllergen
+                                                                      ? FontWeight
+                                                                          .bold
+                                                                      : FontWeight
+                                                                          .normal,
+                                                                  height: 1.5,
+                                                                ),
+                                                              ),
+                                                              if (isAllergen)
+                                                                Padding(
+                                                                  padding:
+                                                                      const EdgeInsets
+                                                                          .only(
+                                                                          top:
+                                                                              4),
+                                                                  child: Wrap(
+                                                                    spacing: 4,
+                                                                    children:
+                                                                        ingredientAllergens
+                                                                            .map((cat) {
+                                                                      return Container(
+                                                                        padding:
+                                                                            const EdgeInsets.symmetric(
+                                                                          horizontal:
+                                                                              6,
+                                                                          vertical:
+                                                                              2,
+                                                                        ),
+                                                                        decoration:
+                                                                            BoxDecoration(
+                                                                          color: Colors
+                                                                              .red
+                                                                              .shade100,
+                                                                          borderRadius:
+                                                                              BorderRadius.circular(8),
+                                                                        ),
+                                                                        child:
+                                                                            Text(
+                                                                          '${AllergenDatabase.getAllergenIcon(cat)} $cat',
+                                                                          style:
+                                                                              const TextStyle(
+                                                                            fontSize:
+                                                                                11,
+                                                                            color:
+                                                                                Colors.red,
+                                                                            fontWeight:
+                                                                                FontWeight.w600,
+                                                                          ),
+                                                                        ),
+                                                                      );
+                                                                    }).toList(),
+                                                                  ),
+                                                                ),
+                                                            ],
                                                           ),
                                                         ),
                                                         if (isAllergen)
@@ -694,14 +773,55 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 0,
         automaticallyImplyLeading: false,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.orange),
-            onPressed: () async {
-              if (mounted) {
-                final _authService = AuthService();
-                _authService.logout(context);
-              }
-            },
+          Padding(
+            padding: const EdgeInsets.only(right: 18),
+            child: ClipOval(
+              child: Container(
+                width: 36,
+                height: 36,
+                color: Colors.white,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(
+                    Icons.person,
+                    color: Colors.orange,
+                    size: 20,
+                  ),
+                  onPressed: () {
+                    if (mounted) {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                            builder: (_) => const ProfileScreen()),
+                      );
+                    }
+                  },
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 16), // extra right padding
+            child: ClipOval(
+              child: Container(
+                width: 36,
+                height: 36,
+                color: Colors.white,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(
+                    Icons.logout,
+                    color: Colors.orange,
+                    size: 20,
+                  ),
+                  onPressed: () {
+                    if (mounted) {
+                      final authService = AuthService();
+                      authService.logout(context);
+                    }
+                  },
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -832,7 +952,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     SizedBox(width: 10),
                                     Expanded(
                                       child: Text(
-                                        '⚠️ Your location is currently under Red Tide',
+                                        'Your location is currently under Red Tide',
                                         style: TextStyle(
                                           color: Colors.red,
                                           fontWeight: FontWeight.bold,

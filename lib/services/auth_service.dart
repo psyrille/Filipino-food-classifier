@@ -1,21 +1,22 @@
 import 'dart:io';
-
 import 'package:filipino_food_scanner/screens/home_screen.dart';
 import 'package:filipino_food_scanner/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_model.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'session_manager.dart';
 
 class AuthService extends ChangeNotifier {
   final SupabaseClient _supabase = Supabase.instance.client;
 
   UserModel? _currentUser;
   bool _isLoading = false;
+  bool _isInitialized = false;
 
   UserModel? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _currentUser != null;
+  bool get isInitialized => _isInitialized;
 
   Future<String?> sendPasswordResetEmail(String email) async {
     try {
@@ -24,18 +25,15 @@ class AuthService extends ChangeNotifier {
 
       await _supabase.auth.resetPasswordForEmail(
         email,
-        redirectTo:
-            'io.supabase.bantayallerji://reset-password', // Your app's deep link
+        redirectTo: 'io.supabase.bantayallerji://reset-password',
       );
 
       _isLoading = false;
       notifyListeners();
-      return null; // Success
+      return null;
     } on AuthException catch (e) {
       _isLoading = false;
       notifyListeners();
-
-      // Handle specific Supabase auth errors
       switch (e.statusCode) {
         case '400':
           return 'Invalid email address';
@@ -62,7 +60,7 @@ class AuthService extends ChangeNotifier {
 
       _isLoading = false;
       notifyListeners();
-      return null; // Success
+      return null;
     } on AuthException catch (e) {
       _isLoading = false;
       notifyListeners();
@@ -90,19 +88,44 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> initialize() async {
+    print('🔄 Initializing Auth Service...');
+
     try {
-      final session = _supabase.auth.currentSession;
+      // STEP 1: Check local session FIRST (works offline)
+      final hasLocalSession = await SessionManager.isLoggedIn();
 
-      if (session != null) {
-        print('✅ Session found! User: ${session.user.email}');
-        print('🕐 Expires at: ${session.expiresAt}');
+      if (hasLocalSession) {
+        print('📱 Local session found, loading user data...');
 
-        // Load user profile
-        await _loadUserProfile(session.user.id);
-      } else {
-        print('ℹ️ No active session found');
+        // Try to load user from local storage
+        final localUser = await SessionManager.getUserData();
+
+        if (localUser != null) {
+          _currentUser = localUser;
+          print('✅ User loaded from local storage: ${localUser.email}');
+          _isInitialized = true;
+          notifyListeners();
+
+          // Try to sync with server in background (don't wait)
+          _syncWithServer();
+          return;
+        }
       }
 
+      // STEP 2: Check Supabase session (requires internet)
+      print('🌐 Checking Supabase session...');
+      final session = _supabase.auth.currentSession;
+
+      if (session != null && !session.isExpired) {
+        print('✅ Supabase session found: ${session.user.email}');
+
+        // Load profile from server
+        await _loadUserProfileFromServer(session.user.id);
+      } else {
+        print('ℹ️ No valid session found');
+      }
+
+      // Listen for auth state changes
       _supabase.auth.onAuthStateChange.listen((data) {
         final event = data.event;
         print('🔔 Auth event: $event');
@@ -110,22 +133,52 @@ class AuthService extends ChangeNotifier {
         if (event == AuthChangeEvent.signedIn) {
           print('✅ User signed in');
           if (data.session?.user != null) {
-            _loadUserProfile(data.session!.user.id);
+            _loadUserProfileFromServer(data.session!.user.id);
           }
         } else if (event == AuthChangeEvent.signedOut) {
           print('👋 User signed out');
           _currentUser = null;
+          SessionManager.clearSession();
           notifyListeners();
         } else if (event == AuthChangeEvent.tokenRefreshed) {
           print('🔄 Token refreshed');
+          SessionManager.refreshSession();
         }
       });
+
+      _isInitialized = true;
+      notifyListeners();
     } catch (e) {
       print('❌ Error initializing auth: $e');
+
+      // Even if initialization fails, try local session
+      final localUser = await SessionManager.getUserData();
+      if (localUser != null) {
+        _currentUser = localUser;
+        print('✅ Fallback: User loaded from local storage');
+      }
+
+      _isInitialized = true;
+      notifyListeners();
     }
   }
 
-  // Register new user
+  // Sync with server in background (don't block UI)
+  Future<void> _syncWithServer() async {
+    try {
+      print('🔄 Syncing with server...');
+      final session = _supabase.auth.currentSession;
+
+      if (session != null && !session.isExpired) {
+        await _loadUserProfileFromServer(session.user.id);
+        print('✅ Sync complete');
+      }
+    } catch (e) {
+      print('⚠️ Sync failed (offline?): $e');
+      // Ignore sync errors - we already have local data
+    }
+  }
+
   Future<String?> register({
     context,
     required String email,
@@ -142,7 +195,6 @@ class AuthService extends ChangeNotifier {
 
       print('📝 Registering user: $email');
 
-      // Create auth user
       final AuthResponse response = await _supabase.auth.signUp(
         email: email,
         password: password,
@@ -156,7 +208,6 @@ class AuthService extends ChangeNotifier {
 
       print('✅ Auth user created: ${response.user!.id}');
 
-      // Create user profile
       await _supabase.from('profiles').upsert({
         'id': response.user!.id,
         'email': email,
@@ -169,13 +220,12 @@ class AuthService extends ChangeNotifier {
 
       print('✅ Profile created');
 
-      // Load user profile
-      await _loadUserProfile(response.user!.id);
+      await _loadUserProfileFromServer(response.user!.id);
 
       _isLoading = false;
       notifyListeners();
 
-      return null; // Success
+      return null;
     } on AuthException catch (e) {
       _isLoading = false;
       notifyListeners();
@@ -184,7 +234,6 @@ class AuthService extends ChangeNotifier {
           builder: (BuildContext context) {
             return showAlert(context, "Error", e.message);
           });
-      print('❌ Auth error: ${e.message}');
       return e.message;
     } catch (e) {
       _isLoading = false;
@@ -195,20 +244,21 @@ class AuthService extends ChangeNotifier {
             return showAlert(context, "Error",
                 "Email might already exist or an internal server occurred, please try again!");
           });
-      print('❌ Registration error: $e');
       return 'Registration failed: $e';
     }
   }
 
-  // Login user
-  Future<String?> login(
-      {required String email, required String password, context}) async {
+  Future<String?> login({
+    required String email,
+    required String password,
+    context,
+  }) async {
     try {
-      // Check for internet connectivity
+      // Check internet
       try {
         final result = await InternetAddress.lookup('example.com');
         if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-          print('connected');
+          print('📶 Connected to internet');
         }
       } on SocketException catch (_) {
         return showDialog(
@@ -222,44 +272,34 @@ class AuthService extends ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      // Attempt to sign in with the provided credentials
+      print('🔐 Logging in: $email');
+
       final AuthResponse response = await _supabase.auth.signInWithPassword(
         email: email,
         password: password,
       );
 
-      // If no user is returned, the login failed
       if (response.user == null) {
         _isLoading = false;
         notifyListeners();
         return 'Login failed';
       }
 
-      final session = _supabase.auth.currentSession;
+      print('✅ Login successful: ${response.user!.email}');
 
-      if (session != null && session.accessToken.isNotEmpty) {
-        await _loadUserProfile(response.user!.id);
+      // Load profile from server
+      await _loadUserProfileFromServer(response.user!.id);
 
-        _isLoading = false;
-        notifyListeners();
+      _isLoading = false;
+      notifyListeners();
 
+      if (_currentUser != null) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const HomeScreen()),
         );
-
         return null;
       } else {
-        // Handle invalid session
-        _isLoading = false;
-        notifyListeners();
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return showAlert(
-                context, "Error", "Session is not valid. Please log in again.");
-          },
-        );
-        return 'Session error';
+        return 'Failed to load user profile';
       }
     } on AuthException catch (e) {
       _isLoading = false;
@@ -284,28 +324,37 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  Future<void> storeSession(AuthResponse response) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    // Store the session token, user ID, or any other necessary data
-    await prefs.setString('access_token', response.session?.accessToken ?? '');
-    await prefs.setString('user_id', response.user?.id ?? '');
-    await prefs.setBool('is_logged_in', true); // Mark as logged in
-  }
-
-  Future<void> _loadUserProfile(String userId) async {
+  Future<void> _loadUserProfileFromServer(String userId) async {
     try {
+      print('📥 Loading profile from server: $userId');
+
       final response =
           await _supabase.from('profiles').select().eq('id', userId).single();
 
       _currentUser = UserModel.fromJson(response);
+
+      // Save to local storage for offline access
+      await SessionManager.saveSession(
+        userId: userId,
+        email: _currentUser!.email,
+        user: _currentUser!,
+      );
+
+      print('✅ Profile loaded and saved locally: ${_currentUser!.email}');
       notifyListeners();
     } catch (e) {
-      print(e);
+      print('❌ Error loading profile from server: $e');
+
+      // Try to load from local cache as fallback
+      final localUser = await SessionManager.getUserData();
+      if (localUser != null) {
+        _currentUser = localUser;
+        print('📱 Using cached profile');
+        notifyListeners();
+      }
     }
   }
 
-  // Update user profile
   Future<String?> updateProfile({
     String? firstName,
     String? middleName,
@@ -331,42 +380,50 @@ class AuthService extends ChangeNotifier {
           .update(updates)
           .eq('id', _currentUser!.id);
 
-      await _loadUserProfile(_currentUser!.id);
+      // Reload profile
+      await _loadUserProfileFromServer(_currentUser!.id);
 
       _isLoading = false;
       notifyListeners();
 
       return null;
     } catch (e) {
+      print('❌ Update error: $e');
+
+      // Update local cache even if server update fails
+      if (allergies != null && _currentUser != null) {
+        _currentUser = _currentUser!.copyWith(allergies: allergies);
+        await SessionManager.updateUserData(_currentUser!);
+        notifyListeners();
+      }
+
       _isLoading = false;
       notifyListeners();
-      return 'Update failed: $e';
+      return 'Update saved locally. Will sync when online.';
     }
   }
 
-  // Logout
   Future<void> logout(context) async {
     try {
       await _supabase.auth.signOut();
+      await SessionManager.clearSession();
       _currentUser = null;
+
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const LoginScreen()),
       );
       notifyListeners();
     } catch (e) {
-      print("Error ${e}");
+      print("Error logging out: $e");
+
+      // Clear local data even if sign out fails
+      await SessionManager.clearSession();
+      _currentUser = null;
+      notifyListeners();
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
     }
   }
-
-  // // Reset password
-  // Future<String?> resetPassword(String email) async {
-  //   try {
-  //     await _supabase.auth.resetPasswordForEmail(email);
-  //     return null; // Success
-  //   } on AuthException catch (e) {
-  //     return e.message;
-  //   } catch (e) {
-  //     return 'Password reset failed: $e';
-  //   }
-  // }
 }

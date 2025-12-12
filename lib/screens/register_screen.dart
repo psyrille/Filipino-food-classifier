@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../utils/allergen_database.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
 
@@ -25,8 +26,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
 
+  // Selected allergens using the 14 standard categories
+  Set<String> _selectedAllergens = {};
+
   Future<void> _requestLocationPermission() async {
-    // Check permission
     LocationPermission permission = await Geolocator.checkPermission();
 
     if (permission == LocationPermission.denied) {
@@ -34,7 +37,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     if (permission == LocationPermission.deniedForever) {
-      // User permanently denied permission
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -44,7 +46,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    // Check if location services (GPS) are enabled
     bool isLocationEnabled = await Geolocator.isLocationServiceEnabled();
 
     if (!isLocationEnabled) {
@@ -52,9 +53,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    // Everything OK → ask for current location (optional)
     final position = await Geolocator.getCurrentPosition();
-
     print("Location granted: ${position.latitude}, ${position.longitude}");
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -64,30 +63,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // List of allergy text fields
-  final List<TextEditingController> _allergyControllers = [
-    TextEditingController()
-  ];
-
-  void _addAllergyField() {
-    setState(() {
-      _allergyControllers.add(TextEditingController());
-    });
-  }
-
-  void _removeAllergyField(int index) {
-    setState(() {
-      if (_allergyControllers.length > 1) {
-        _allergyControllers[index].dispose();
-        _allergyControllers.removeAt(index);
-      }
-    });
-  }
-
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Check password match
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -97,14 +75,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       return;
     }
-
-    // Collect allergies from all text fields (filter out empty ones)
-    final allergies = _allergyControllers
-        .map((controller) => controller.text.trim())
-        .where((text) => text.isNotEmpty)
-        .toList();
-
-    print('📋 Allergies to save: $allergies'); // Debug
 
     final authService = context.read<AuthService>();
 
@@ -120,12 +90,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       contactNo: _contactController.text.trim().isEmpty
           ? null
           : _contactController.text.trim(),
-      allergies: allergies, // 🎯 ARRAY OF STRINGS
+      allergies: _selectedAllergens.toList(), // Send selected categories
     );
 
     if (mounted) {
       if (error == null) {
-        // Success - navigate to home
         showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -151,9 +120,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _contactController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    for (var controller in _allergyControllers) {
-      controller.dispose();
-    }
     super.dispose();
   }
 
@@ -164,20 +130,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Background gradient
-          // Container(
-          //   decoration: const BoxDecoration(
-          //     gradient: LinearGradient(
-          //       begin: Alignment.topLeft,
-          //       end: Alignment.bottomRight,
-          //       colors: [
-          //         Color(0xFFFFF4E6),
-          //         Color(0xFFFFE8CC),
-          //         Color(0xFFFFDDB3),
-          //       ],
-          //     ),
-          //   ),
-          // ),
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
@@ -187,7 +139,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
           ),
-
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -232,7 +183,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                       const SizedBox(height: 40),
 
-                      // --- Personal Info Fields ---
+                      // Personal Info Fields
                       _buildTextField(
                         controller: _firstNameController,
                         label: 'First Name',
@@ -287,7 +238,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // --- Password Fields ---
+                      // Password Fields
                       _buildPasswordField(
                         controller: _passwordController,
                         label: 'Password',
@@ -322,7 +273,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                       const SizedBox(height: 25),
 
-                      // --- Allergies Section ---
+                      // Allergies Section with 14 Categories
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -331,77 +282,179 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           border: Border.all(color: Colors.orange.shade200),
                         ),
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text(
-                                  'What are your allergies?',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF2D1B00),
+                                const Icon(Icons.warning_amber,
+                                    color: Colors.orange),
+                                const SizedBox(width: 10),
+                                const Expanded(
+                                  child: Text(
+                                    'Select Your Food Allergies',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF2D1B00),
+                                    ),
                                   ),
-                                ),
-                                IconButton(
-                                  onPressed: _addAllergyField,
-                                  icon: const Icon(Icons.add_circle,
-                                      color: Colors.orange, size: 30),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 5),
+                            Text(
+                              'Based on the 14 major allergens',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(height: 15),
 
-                            // Dynamic allergy inputs
-                            Column(
-                              children: List.generate(
-                                  _allergyControllers.length, (index) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 10),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: TextField(
-                                          controller:
-                                              _allergyControllers[index],
-                                          decoration: InputDecoration(
-                                            hintText:
-                                                'e.g., Peanuts, Shrimp, Squid',
-                                            prefixIcon: const Icon(
-                                                Icons.warning_amber,
-                                                color: Colors.orange),
-                                            filled: true,
-                                            fillColor: Colors.white,
-                                            contentPadding:
-                                                const EdgeInsets.symmetric(
-                                                    vertical: 16,
-                                                    horizontal: 20),
-                                            border: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(15),
-                                              borderSide: BorderSide.none,
-                                            ),
+                            // Grid of allergen checkboxes
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: AllergenDatabase.allergenCategories
+                                  .map((allergen) {
+                                final isSelected =
+                                    _selectedAllergens.contains(allergen);
+
+                                return InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      if (isSelected) {
+                                        _selectedAllergens.remove(allergen);
+                                      } else {
+                                        _selectedAllergens.add(allergen);
+                                      }
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? Colors.orange
+                                          : Colors.white,
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? Colors.orange
+                                            : Colors.grey.shade300,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          AllergenDatabase.getAllergenIcon(
+                                              allergen),
+                                          style: const TextStyle(fontSize: 16),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          allergen,
+                                          style: TextStyle(
+                                            color: isSelected
+                                                ? Colors.white
+                                                : const Color(0xFF2D1B00),
+                                            fontWeight: isSelected
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
                                           ),
                                         ),
-                                      ),
-                                      if (_allergyControllers.length > 1)
-                                        IconButton(
-                                          onPressed: () =>
-                                              _removeAllergyField(index),
-                                          icon: const Icon(Icons.remove_circle,
-                                              color: Colors.redAccent),
-                                        ),
-                                    ],
+                                        if (isSelected) ...[
+                                          const SizedBox(width: 4),
+                                          const Icon(
+                                            Icons.check_circle,
+                                            color: Colors.white,
+                                            size: 16,
+                                          ),
+                                        ],
+                                      ],
+                                    ),
                                   ),
                                 );
-                              }),
+                              }).toList(),
                             ),
+
+                            if (_selectedAllergens.isNotEmpty) ...[
+                              const SizedBox(height: 15),
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.shade50,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${_selectedAllergens.length} allergen(s) selected',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.orange,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    ..._selectedAllergens.map((allergen) {
+                                      return Padding(
+                                        padding:
+                                            const EdgeInsets.only(bottom: 4),
+                                        child: Row(
+                                          children: [
+                                            Text(
+                                              AllergenDatabase.getAllergenIcon(
+                                                  allergen),
+                                              style:
+                                                  const TextStyle(fontSize: 14),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    allergen,
+                                                    style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 13,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    AllergenDatabase
+                                                        .getAllergenDescription(
+                                                            allergen),
+                                                    style: TextStyle(
+                                                      fontSize: 11,
+                                                      color:
+                                                          Colors.grey.shade600,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
 
                       const SizedBox(height: 20),
 
+                      // Location Permission Container
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -415,7 +468,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Circular info icon
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: const BoxDecoration(
@@ -429,12 +481,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 10),
-
-                                // Expandable text
-                                Expanded(
+                                const Expanded(
                                   child: Text(
                                     'For Red tide and ASF warnings, kindly turn-on your device location.',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
                                       color: Color(0xFF2D1B00),
@@ -443,10 +493,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                               ],
                             ),
-
                             const SizedBox(height: 12),
-
-                            // Turn On Location Button
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
@@ -478,7 +525,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                       const SizedBox(height: 30),
 
-                      // --- Register Button ---
+                      // Register Button
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -506,7 +553,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                       const SizedBox(height: 25),
 
-                      // --- Login Link ---
+                      // Login Link
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -545,7 +592,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // 🔸 Reusable text field builder with validation
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -572,7 +618,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // 🔸 Password field with visibility toggle and validation
   Widget _buildPasswordField({
     required TextEditingController controller,
     required String label,
