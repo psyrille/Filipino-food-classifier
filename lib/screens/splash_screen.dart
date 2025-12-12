@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../services/session_manager.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
 
@@ -15,27 +16,88 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _checkAuth();
+    _initializeApp();
   }
 
-  Future<void> _checkAuth() async {
-    final authService = context.read<AuthService>();
+  Future<void> _initializeApp() async {
+    try {
+      print('🚀 Starting app initialization...');
 
-    // Initialize auth service (checks if user is already logged in)
-    await authService.initialize();
+      // STEP 1: Check local session FIRST (works offline)
+      print('📱 Checking local session...');
+      final hasLocalSession = await SessionManager.isLoggedIn();
 
-    // Wait a bit for splash screen effect
-    await Future.delayed(const Duration(seconds: 2));
+      if (hasLocalSession) {
+        print('✅ Local session found!');
+        await SessionManager.debugPrintSession();
 
-    if (mounted) {
-      // Navigate based on auth status
-      if (authService.isAuthenticated) {
-        // User is logged in - go to home
+        // Initialize auth service (will load from local storage)
+        final authService = context.read<AuthService>();
+        await authService.initialize();
+
+        // Small delay for splash effect
+        await Future.delayed(const Duration(seconds: 1));
+
+        if (!mounted) return;
+
+        if (authService.isAuthenticated && authService.currentUser != null) {
+          print('✅ User authenticated from local session, going to home');
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const HomeScreen()),
+          );
+          return;
+        }
+      }
+
+      // STEP 2: No local session, try Supabase (requires internet)
+      print('🌐 No local session, checking Supabase...');
+      final authService = context.read<AuthService>();
+      await authService.initialize();
+
+      // Wait for splash effect
+      await Future.delayed(const Duration(seconds: 1));
+
+      if (!mounted) return;
+
+      print(
+          '🔍 Final check - Is Authenticated: ${authService.isAuthenticated}');
+      print(
+          '🔍 Final check - Current User: ${authService.currentUser?.email ?? "None"}');
+
+      if (authService.isAuthenticated && authService.currentUser != null) {
+        print('✅ User authenticated, navigating to home');
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const HomeScreen()),
         );
       } else {
-        // User is not logged in - go to login
+        print('❌ User not authenticated, navigating to login');
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+      }
+    } catch (e) {
+      print('❌ Error during initialization: $e');
+
+      // Last resort: check local session one more time
+      final hasLocalSession = await SessionManager.isLoggedIn();
+      final authService = context.read<AuthService>();
+
+      if (hasLocalSession) {
+        await authService.initialize();
+
+        if (!mounted) return;
+
+        if (authService.isAuthenticated) {
+          print('✅ Recovered from error using local session');
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const HomeScreen()),
+          );
+          return;
+        }
+      }
+
+      // If all else fails, go to login
+      if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const LoginScreen()),
         );
@@ -76,17 +138,27 @@ class _SplashScreenState extends State<SplashScreen> {
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.restaurant,
-                  size: 100,
-                  color: Colors.orange,
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/images/logos/main.png',
+                    width: 100,
+                    height: 100,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(
+                        Icons.restaurant,
+                        size: 100,
+                        color: Colors.orange,
+                      );
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 30),
 
               // App Name
               const Text(
-                'Filipino Food',
+                'BantayAllerji',
                 style: TextStyle(
                   fontSize: 40,
                   fontWeight: FontWeight.bold,
@@ -94,9 +166,9 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               ),
               const Text(
-                'Scanner',
+                'Food Scanner',
                 style: TextStyle(
-                  fontSize: 36,
+                  fontSize: 24,
                   fontWeight: FontWeight.w500,
                   color: Colors.orange,
                 ),
@@ -109,7 +181,7 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
               const SizedBox(height: 20),
               const Text(
-                'Loading...',
+                'Initializing...',
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey,

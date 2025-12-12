@@ -13,14 +13,34 @@ import 'screens/home_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Supabase
-  await Supabase.initialize(
-    url: SupabaseConfig.supabaseUrl,
-    anonKey: SupabaseConfig.supabaseAnonKey,
-    authOptions: const FlutterAuthClientOptions(
-      authFlowType: AuthFlowType.pkce, // More secure auth flow
-    ),
-  );
+  try {
+    print('🔧 Initializing Supabase...');
+
+    // Initialize Supabase with persistent storage
+    await Supabase.initialize(
+      url: SupabaseConfig.supabaseUrl,
+      anonKey: SupabaseConfig.supabaseAnonKey,
+      authOptions: const FlutterAuthClientOptions(
+        authFlowType: AuthFlowType.pkce, // More secure auth flow
+      ),
+      // Enable debug mode to see what's happening
+      debug: true,
+    );
+
+    print('✅ Supabase initialized successfully');
+
+    // Check if there's an existing session
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session != null) {
+      print('📱 Existing session found: ${session.user.email}');
+      print('🕐 Expires at: ${session.expiresAt}');
+      print('📊 Is expired: ${session.isExpired}');
+    } else {
+      print('ℹ️ No existing session found');
+    }
+  } catch (e) {
+    print('❌ Error initializing Supabase: $e');
+  }
 
   runApp(const MyApp());
 }
@@ -46,7 +66,7 @@ class _MyAppState extends State<MyApp> {
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       final event = data.event;
 
-      print('🔐 Auth event: $event'); // Debug log
+      print('🔐 Auth event: $event');
 
       // When user clicks the password reset link in their email
       if (event == AuthChangeEvent.passwordRecovery) {
@@ -55,8 +75,18 @@ class _MyAppState extends State<MyApp> {
         // Navigate to reset password screen
         navigatorKey.currentState?.pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const ResetPasswordScreen()),
-          (route) => false, // Remove all previous routes
+          (route) => false,
         );
+      }
+
+      // When token is refreshed, log it
+      if (event == AuthChangeEvent.tokenRefreshed) {
+        print('🔄 Token refreshed successfully');
+      }
+
+      // When user signs out
+      if (event == AuthChangeEvent.signedOut) {
+        print('👋 User signed out');
       }
     });
   }
@@ -71,7 +101,7 @@ class _MyAppState extends State<MyApp> {
       child: MaterialApp(
         title: 'BantayAllerji',
         debugShowCheckedModeBanner: false,
-        navigatorKey: navigatorKey, // 👈 Important: Add navigator key
+        navigatorKey: navigatorKey,
         theme: ThemeData(
           primarySwatch: Colors.orange,
           scaffoldBackgroundColor: const Color(0xFFFFF8F0),
