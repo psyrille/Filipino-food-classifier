@@ -470,7 +470,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 BorderRadius.circular(15),
                                             child: Image.asset(
                                               food.imageUrl ??
-                                                  'assets/images/food/no_image_food.png',
+                                                  'assets/images/food/no_food_image.png',
                                               height: 180,
                                               width: double.infinity,
                                               fit: BoxFit.cover,
@@ -510,7 +510,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 ),
                                                 const SizedBox(height: 7),
                                                 Text(
-                                                  food.description,
+                                                  food.description ?? '',
                                                   textAlign: TextAlign.center,
                                                   style: const TextStyle(
                                                     fontSize: 16,
@@ -1083,63 +1083,66 @@ class _HomeScreenState extends State<HomeScreen> {
                         itemCount: foods.length,
                         itemBuilder: (context, index) {
                           final food = foods[index];
-                          return GestureDetector(
-                            onTap: () => _showFoodModal(food, user?.allergies),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 5),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.fromLTRB(
-                                        15, 0, 15, 15),
-                                    child: ClipRRect(
-                                      borderRadius:
-                                          BorderRadiusGeometry.circular(12),
-                                      child: Image.asset(
-                                        food.imageUrl ??
-                                            'assets/images/food/no_food_image.png',
-                                        width: 130,
-                                        height: 90,
-                                        fit: BoxFit.cover,
+                          if (food.id != 'non_food') {
+                            return GestureDetector(
+                              onTap: () =>
+                                  _showFoodModal(food, user?.allergies),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.05),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 5),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.fromLTRB(
+                                          15, 0, 15, 15),
+                                      child: ClipRRect(
+                                        borderRadius:
+                                            BorderRadiusGeometry.circular(12),
+                                        child: Image.asset(
+                                          food.imageUrl ??
+                                              'assets/images/food/no_food_image.png',
+                                          width: 130,
+                                          height: 90,
+                                          fit: BoxFit.cover,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8),
-                                    child: Column(
-                                      children: [
-                                        Text(
-                                          food.name,
-                                          style: const TextStyle(
-                                            fontSize: 17,
-                                            fontWeight: FontWeight.w900,
-                                            color: Color(0xFF2D1B00),
+                                    const SizedBox(height: 10),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8),
+                                      child: Column(
+                                        children: [
+                                          Text(
+                                            food.name,
+                                            style: const TextStyle(
+                                              fontSize: 17,
+                                              fontWeight: FontWeight.w900,
+                                              color: Color(0xFF2D1B00),
+                                            ),
+                                            textAlign: TextAlign.center,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                          textAlign: TextAlign.center,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 7),
-                                      ],
+                                          const SizedBox(height: 7),
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          );
+                            );
+                          }
                         },
                       ),
                   ],

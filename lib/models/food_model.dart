@@ -1,7 +1,7 @@
 class FoodModel {
   final String id;
   final String name;
-  final String description;
+  final String? description;
   final List<String> ingredients;
   final NutritionalInfo? nutritionalInfo;
   final String? imageUrl;
@@ -10,7 +10,7 @@ class FoodModel {
     required this.id,
     required this.name,
     this.imageUrl,
-    required this.description,
+    this.description,
     required this.ingredients,
     this.nutritionalInfo,
   });

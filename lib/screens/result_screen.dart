@@ -288,7 +288,7 @@ class ResultScreen extends StatelessWidget {
                               ),
                               const SizedBox(height: 15),
                               Text(
-                                result.food.description,
+                                result.food.description ?? '',
                                 style: const TextStyle(
                                   fontSize: 16,
                                   color: Colors.white,

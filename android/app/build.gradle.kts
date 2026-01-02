@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.filipino_food_scanner"
-    compileSdk = 35
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
