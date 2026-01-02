@@ -97,9 +97,3 @@
 96 Tortang Talong
 97 Pork Sisig
 98 Sinigang na Hipon
-99 Dried Mango
-100 Dried Papaya
-101 Dried Pineapple
-102 Dried Jackfruit
-103 Dried Coconut
-104 Dried Banana
