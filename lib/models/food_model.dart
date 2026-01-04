@@ -5,6 +5,7 @@ class FoodModel {
   final List<String> ingredients;
   final NutritionalInfo? nutritionalInfo;
   final String? imageUrl;
+  final List<String> localNames;
 
   FoodModel({
     required this.id,
@@ -13,6 +14,7 @@ class FoodModel {
     this.description,
     required this.ingredients,
     this.nutritionalInfo,
+    this.localNames = const [],
   });
 
   factory FoodModel.fromJson(Map<String, dynamic> json) {
