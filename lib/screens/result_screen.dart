@@ -287,6 +287,43 @@ class ResultScreen extends StatelessWidget {
                                 ],
                               ),
                               const SizedBox(height: 15),
+                              if (result.food.localNames != null &&
+                                  result.food.localNames!.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                const Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    'Other names',
+                                    style: const TextStyle(
+                                      fontSize: 18.5, // slightly bigger
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white, // white text
+                                    ),
+                                    textAlign: TextAlign.right,
+                                  ),
+                                ),
+                                const SizedBox(height: 7),
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Wrap(
+                                    alignment: WrapAlignment.start,
+                                    spacing: 6,
+                                    runSpacing: 2,
+                                    children: result.food.localNames!
+                                        .map((localName) {
+                                      return Text(
+                                        '- $localName',
+                                        style: const TextStyle(
+                                          fontSize: 14.5, // slightly bigger
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white, // white text
+                                        ),
+                                        textAlign: TextAlign.right,
+                                      );
+                                    }).toList(),
+                                  ),
+                                )
+                              ],
                               Text(
                                 result.food.description ?? '',
                                 style: const TextStyle(

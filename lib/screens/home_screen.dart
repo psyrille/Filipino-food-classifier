@@ -518,6 +518,56 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   ),
                                                 ),
                                                 const SizedBox(height: 7),
+                                                if (food.localNames != null &&
+                                                    food.localNames!
+                                                        .isNotEmpty) ...[
+                                                  const SizedBox(height: 4),
+                                                  const Align(
+                                                    alignment:
+                                                        Alignment.centerLeft,
+                                                    child: Text(
+                                                      'Other names',
+                                                      style: const TextStyle(
+                                                        fontSize:
+                                                            18.5, // slightly bigger
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Colors
+                                                            .white, // white text
+                                                      ),
+                                                      textAlign:
+                                                          TextAlign.right,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 7),
+                                                  Align(
+                                                    alignment:
+                                                        Alignment.centerLeft,
+                                                    child: Wrap(
+                                                      alignment:
+                                                          WrapAlignment.start,
+                                                      spacing: 6,
+                                                      runSpacing: 2,
+                                                      children: food.localNames!
+                                                          .map((localName) {
+                                                        return Text(
+                                                          '- $localName',
+                                                          style:
+                                                              const TextStyle(
+                                                            fontSize:
+                                                                14.5, // slightly bigger
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                            color: Colors
+                                                                .white, // white text
+                                                          ),
+                                                          textAlign:
+                                                              TextAlign.right,
+                                                        );
+                                                      }).toList(),
+                                                    ),
+                                                  ),
+                                                ],
                                                 Text(
                                                   food.description ?? '',
                                                   textAlign: TextAlign.center,
@@ -1131,6 +1181,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 8),
                                       child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
                                         children: [
                                           Text(
                                             food.name,
@@ -1143,6 +1195,30 @@ class _HomeScreenState extends State<HomeScreen> {
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                           ),
+
+                                          // show local names if available
+                                          if (food.localNames != null &&
+                                              food.localNames!.isNotEmpty) ...[
+                                            const SizedBox(height: 4),
+                                            Wrap(
+                                              alignment: WrapAlignment.center,
+                                              spacing: 6,
+                                              runSpacing: 2,
+                                              children: food.localNames!
+                                                  .map((localName) {
+                                                return Text(
+                                                  localName,
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Colors.brown,
+                                                  ),
+                                                  textAlign: TextAlign.center,
+                                                );
+                                              }).toList(),
+                                            ),
+                                          ],
+
                                           const SizedBox(height: 7),
                                         ],
                                       ),

@@ -87,6 +87,48 @@ class _LoginScreenState extends State<LoginScreen> {
                             color: Colors.orange,
                           ),
                         ),
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 12,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Icon(
+                                  Icons.verified_rounded,
+                                  color: Colors.orange,
+                                  size: 22,
+                                ),
+                                SizedBox(width: 10),
+
+                                // THIS allows wrapping
+                                Expanded(
+                                  child: Text(
+                                    'For a safer food experience in the Philippines.',
+                                    style: TextStyle(
+                                      fontSize: 15.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF8A4B00),
+                                      height: 1.35,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ],
                     ),
 
