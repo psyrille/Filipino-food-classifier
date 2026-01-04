@@ -221,9 +221,18 @@ class _HomeScreenState extends State<HomeScreen> {
       if (query.isEmpty) {
         _filteredFoods = allFoods;
       } else {
-        _filteredFoods = allFoods
-            .where((food) => food.name.toLowerCase().contains(query))
-            .toList();
+        _filteredFoods = allFoods.where((food) {
+          // match main name
+          final nameMatch = food.name.toLowerCase().contains(query);
+
+          // match local names (if any)
+          final localMatch = food.localNames?.any(
+                (localName) => localName.toLowerCase().contains(query),
+              ) ??
+              false;
+
+          return nameMatch || localMatch;
+        }).toList();
       }
     });
   }
