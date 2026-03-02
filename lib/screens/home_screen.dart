@@ -1,8 +1,7 @@
-import 'package:filipino_food_scanner/screens/login_screen.dart';
 import 'package:filipino_food_scanner/screens/profile.dart';
-import 'package:filipino_food_scanner/services/auth_service.dart';
 import 'package:filipino_food_scanner/utils/allergen_database.dart';
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/adapters.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:io';
@@ -819,11 +818,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final foods = _filteredFoods;
-    final authService = context.watch<AuthService>();
-    final user = authService.currentUser;
+    final box = Hive.box('userBox');
+    final firstName = box.get('first_name') ?? 'firstName';
 
-    final userName =
-        user != null ? 'Hi, ${user.firstName}!' : 'Food classifier';
+    final userName = "Hi, $firstName";
+
+    final List<String> allergies =
+        List<String>.from(box.get('allergies') ?? []);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -852,30 +853,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         MaterialPageRoute(
                             builder: (_) => const ProfileScreen()),
                       );
-                    }
-                  },
-                ),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 16), // extra right padding
-            child: ClipOval(
-              child: Container(
-                width: 36,
-                height: 36,
-                color: Colors.white,
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  icon: const Icon(
-                    Icons.logout,
-                    color: Colors.orange,
-                    size: 20,
-                  ),
-                  onPressed: () {
-                    if (mounted) {
-                      final authService = AuthService();
-                      authService.logout(context);
                     }
                   },
                 ),
@@ -1144,8 +1121,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           final food = foods[index];
                           if (food.id != 'non_food') {
                             return GestureDetector(
-                              onTap: () =>
-                                  _showFoodModal(food, user?.allergies),
+                              onTap: () => _showFoodModal(food, allergies),
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: Colors.white,

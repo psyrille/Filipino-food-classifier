@@ -179,74 +179,73 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  Future<String?> register({
-    context,
-    required String email,
-    required String password,
-    required String firstName,
-    String? middleName,
-    required String lastName,
-    String? contactNo,
-    required List<String> allergies,
-  }) async {
-    try {
-      _isLoading = true;
-      notifyListeners();
+  // Future<String?> register({
+  //   context,
+  //   required String email,
+  //   required String firstName,
+  //   String? middleName,
+  //   required String lastName,
+  //   String? contactNo,
+  //   required List<String> allergies,
+  // }) async {
+  //   try {
+  //     _isLoading = true;
+  //     notifyListeners();
 
-      print('📝 Registering user: $email');
+  //     print('📝 Registering user: $email');
 
-      final AuthResponse response = await _supabase.auth.signUp(
-        email: email,
-        password: password,
-      );
+  //     final AuthResponse response = await _supabase.auth.signUp(
+  //       email: email,
+  //       password: password,
+  //     );
 
-      if (response.user == null) {
-        _isLoading = false;
-        notifyListeners();
-        return 'Failed to create account';
-      }
+  //     if (response.user == null) {
+  //       _isLoading = false;
+  //       notifyListeners();
+  //       return 'Failed to create account';
+  //     }
 
-      print('✅ Auth user created: ${response.user!.id}');
+  //     print('✅ Auth user created: ${response.user!.id}');
 
-      await _supabase.from('profiles').upsert({
-        'id': response.user!.id,
-        'email': email,
-        'first_name': firstName,
-        'middle_name': middleName,
-        'last_name': lastName,
-        'contact_no': contactNo,
-        'allergies': allergies,
-      });
+  //     await _supabase.from('profiles').upsert({
+  //       'id': response.user!.id,
+  //       'email': email,
+  //       'first_name': firstName,
+  //       'middle_name': middleName,
+  //       'last_name': lastName,
+  //       'contact_no': contactNo,
+  //       'allergies': allergies,
+  //     });
 
-      print('✅ Profile created');
+  //     print('✅ Profile created');
 
-      await _loadUserProfileFromServer(response.user!.id);
+  //     await _loadUserProfileFromServer(response.user!.id);
 
-      _isLoading = false;
-      notifyListeners();
+  //     _isLoading = false;
+  //     notifyListeners();
 
-      return null;
-    } on AuthException catch (e) {
-      _isLoading = false;
-      notifyListeners();
-      showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return showAlert(context, "Error", e.message);
-          });
-      return e.message;
-    } catch (e) {
-      _isLoading = false;
-      notifyListeners();
-      showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return showAlert(context, "Error",
-                "Email might already exist or an internal server occurred, please try again!");
-          });
-      return 'Registration failed: $e';
-    }
-  }
+  //     return null;
+  //   } on AuthException catch (e) {
+  //     _isLoading = false;
+  //     notifyListeners();
+  //     showDialog(
+  //         context: context,
+  //         builder: (BuildContext context) {
+  //           return showAlert(context, "Error", e.message);
+  //         });
+  //     return e.message;
+  //   } catch (e) {
+  //     _isLoading = false;
+  //     notifyListeners();
+  //     showDialog(
+  //         context: context,
+  //         builder: (BuildContext context) {
+  //           return showAlert(context, "Error",
+  //               "Email might already exist or an internal server occurred, please try again!");
+  //         });
+  //     return 'Registration failed: $e';
+  //   }
+  // }
 
   Future<String?> login({
     required String email,

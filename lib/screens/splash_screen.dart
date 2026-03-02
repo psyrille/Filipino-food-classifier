@@ -1,7 +1,9 @@
+import 'package:filipino_food_scanner/screens/register_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../services/auth_service.dart';
-import '../services/session_manager.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+// import 'package:provider/provider.dart';
+// import '../services/auth_service.dart';
+// import '../services/session_manager.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
 
@@ -19,89 +21,118 @@ class _SplashScreenState extends State<SplashScreen> {
     _initializeApp();
   }
 
+  // Future<void> _initializeApp() async {
+  //   // try {
+  //   //   print('🚀 Starting app initialization...');
+
+  //   //   // STEP 1: Check local session FIRST (works offline)
+  //   //   print('📱 Checking local session...');
+  //   //   final hasLocalSession = await SessionManager.isLoggedIn();
+
+  //   //   if (hasLocalSession) {
+  //   //     print('✅ Local session found!');
+  //   //     await SessionManager.debugPrintSession();
+
+  //   //     // Initialize auth service (will load from local storage)
+  //   //     final authService = context.read<AuthService>();
+  //   //     await authService.initialize();
+
+  //   //     // Small delay for splash effect
+  //   //     await Future.delayed(const Duration(seconds: 1));
+
+  //   //     if (!mounted) return;
+
+  //   //     if (authService.isAuthenticated && authService.currentUser != null) {
+  //   //       print('✅ User authenticated from local session, going to home');
+  //   //       Navigator.of(context).pushReplacement(
+  //   //         MaterialPageRoute(builder: (_) => const HomeScreen()),
+  //   //       );
+  //   //       return;
+  //   //     }
+  //   //   }
+
+  //   //   // STEP 2: No local session, try Supabase (requires internet)
+  //   //   print('🌐 No local session, checking Supabase...');
+  //   //   final authService = context.read<AuthService>();
+  //   //   await authService.initialize();
+
+  //   //   // Wait for splash effect
+  //   //   await Future.delayed(const Duration(seconds: 1));
+
+  //   //   if (!mounted) return;
+
+  //   //   print(
+  //   //       '🔍 Final check - Is Authenticated: ${authService.isAuthenticated}');
+  //   //   print(
+  //   //       '🔍 Final check - Current User: ${authService.currentUser?.email ?? "None"}');
+
+  //   //   if (authService.isAuthenticated && authService.currentUser != null) {
+  //   //     print('✅ User authenticated, navigating to home');
+  //   //     Navigator.of(context).pushReplacement(
+  //   //       MaterialPageRoute(builder: (_) => const HomeScreen()),
+  //   //     );
+  //   //   } else {
+  //   //     print('❌ User not authenticated, navigating to login');
+  //   //     Navigator.of(context).pushReplacement(
+  //   //       MaterialPageRoute(builder: (_) => const LoginScreen()),
+  //   //     );
+  //   //   }
+  //   // } catch (e) {
+  //   //   print('❌ Error during initialization: $e');
+
+  //   //   // Last resort: check local session one more time
+  //   //   final hasLocalSession = await SessionManager.isLoggedIn();
+  //   //   final authService = context.read<AuthService>();
+
+  //   //   if (hasLocalSession) {
+  //   //     await authService.initialize();
+
+  //   //     if (!mounted) return;
+
+  //   //     if (authService.isAuthenticated) {
+  //   //       print('✅ Recovered from error using local session');
+  //   //       Navigator.of(context).pushReplacement(
+  //   //         MaterialPageRoute(builder: (_) => const HomeScreen()),
+  //   //       );
+  //   //       return;
+  //   //     }
+  //   //   }
+
+  //   //   // If all else fails, go to login
+  //   //   if (mounted) {
+  //   //     Navigator.of(context).pushReplacement(
+  //   //       MaterialPageRoute(builder: (_) => const LoginScreen()),
+  //   //     );
+  //   //   }
+  //   // }
+
+  //   var box = Hive.box('userBox');
+  //   bool hasUser = box.containsKey('name');
+
+  //   if (!hasUser) {
+  //     MaterialPageRoute(builder: (_) => const RegisterScreen());
+  //   } else {
+  //     MaterialPageRoute(builder: (_) => const HomeScreen());
+  //   }
+  // }
+
   Future<void> _initializeApp() async {
-    try {
-      print('🚀 Starting app initialization...');
+    var box = await Hive.openBox('userBox'); // ensure opened
 
-      // STEP 1: Check local session FIRST (works offline)
-      print('📱 Checking local session...');
-      final hasLocalSession = await SessionManager.isLoggedIn();
+    bool hasUser = box.containsKey('first_name');
 
-      if (hasLocalSession) {
-        print('✅ Local session found!');
-        await SessionManager.debugPrintSession();
+    await Future.delayed(const Duration(seconds: 2)); // splash effect
 
-        // Initialize auth service (will load from local storage)
-        final authService = context.read<AuthService>();
-        await authService.initialize();
+    if (!mounted) return;
 
-        // Small delay for splash effect
-        await Future.delayed(const Duration(seconds: 1));
-
-        if (!mounted) return;
-
-        if (authService.isAuthenticated && authService.currentUser != null) {
-          print('✅ User authenticated from local session, going to home');
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const HomeScreen()),
-          );
-          return;
-        }
-      }
-
-      // STEP 2: No local session, try Supabase (requires internet)
-      print('🌐 No local session, checking Supabase...');
-      final authService = context.read<AuthService>();
-      await authService.initialize();
-
-      // Wait for splash effect
-      await Future.delayed(const Duration(seconds: 1));
-
-      if (!mounted) return;
-
-      print(
-          '🔍 Final check - Is Authenticated: ${authService.isAuthenticated}');
-      print(
-          '🔍 Final check - Current User: ${authService.currentUser?.email ?? "None"}');
-
-      if (authService.isAuthenticated && authService.currentUser != null) {
-        print('✅ User authenticated, navigating to home');
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
-      } else {
-        print('❌ User not authenticated, navigating to login');
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-        );
-      }
-    } catch (e) {
-      print('❌ Error during initialization: $e');
-
-      // Last resort: check local session one more time
-      final hasLocalSession = await SessionManager.isLoggedIn();
-      final authService = context.read<AuthService>();
-
-      if (hasLocalSession) {
-        await authService.initialize();
-
-        if (!mounted) return;
-
-        if (authService.isAuthenticated) {
-          print('✅ Recovered from error using local session');
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const HomeScreen()),
-          );
-          return;
-        }
-      }
-
-      // If all else fails, go to login
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-        );
-      }
+    if (hasUser) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const RegisterScreen()),
+      );
     }
   }
 
