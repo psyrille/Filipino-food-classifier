@@ -1,8 +1,12 @@
+// import 'package:filipino_food_scanner/screens/register_screen.dart';
+import 'package:filipino_food_scanner/config/supabase_config.dart';
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/adapters.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'config/supabase_config.dart';
+// import 'package:supabase_flutter/supabase_flutter.dart';
+// import 'config/supabase_config.dart';
 import 'screens/splash_screen.dart';
 import 'services/ml_service.dart';
 import 'services/auth_service.dart';
@@ -14,8 +18,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    print('🔧 Initializing Supabase...');
-
     // Initialize Supabase with persistent storage
     await Supabase.initialize(
       url: SupabaseConfig.supabaseUrl,
@@ -42,6 +44,10 @@ void main() async {
     print('❌ Error initializing Supabase: $e');
   }
 
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  await Hive.openBox('userBox');
+
   runApp(const MyApp());
 }
 
@@ -58,38 +64,47 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    _setupAuthListener();
+    // _setupAuthListener();
   }
 
-  void _setupAuthListener() {
-    // Listen for auth state changes
-    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-      final event = data.event;
+  // void _setupAuthListener() {
+  //   // Listen for auth state changes
+  //   // Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+  //   //   final event = data.event;
 
-      print('🔐 Auth event: $event');
+  //   //   print('🔐 Auth event: $event');
 
-      // When user clicks the password reset link in their email
-      if (event == AuthChangeEvent.passwordRecovery) {
-        print('🔄 Password recovery detected - navigating to reset screen');
+  //   //   // When user clicks the password reset link in their email
+  //   //   if (event == AuthChangeEvent.passwordRecovery) {
+  //   //     print('🔄 Password recovery detected - navigating to reset screen');
 
-        // Navigate to reset password screen
-        navigatorKey.currentState?.pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const ResetPasswordScreen()),
-          (route) => false,
-        );
-      }
+  //   //     // Navigate to reset password screen
+  //   //     navigatorKey.currentState?.pushAndRemoveUntil(
+  //   //       MaterialPageRoute(builder: (_) => const ResetPasswordScreen()),
+  //   //       (route) => false,
+  //   //     );
+  //   //   }
 
-      // When token is refreshed, log it
-      if (event == AuthChangeEvent.tokenRefreshed) {
-        print('🔄 Token refreshed successfully');
-      }
+  //   //   // When token is refreshed, log it
+  //   //   if (event == AuthChangeEvent.tokenRefreshed) {
+  //   //     print('🔄 Token refreshed successfully');
+  //   //   }
 
-      // When user signs out
-      if (event == AuthChangeEvent.signedOut) {
-        print('👋 User signed out');
-      }
-    });
-  }
+  //   //   // When user signs out
+  //   //   if (event == AuthChangeEvent.signedOut) {
+  //   //     print('👋 User signed out');
+  //   //   }
+  //   // });
+
+  //   var box = Hive.box('userBox');
+  //   bool hasUser = box.containsKey('name');
+
+  //   if (!hasUser) {
+  //     MaterialPageRoute(builder: (_) => const RegisterScreen());
+  //   } else {
+  //     MaterialPageRoute(builder: (_) => const HomeScreen());
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {

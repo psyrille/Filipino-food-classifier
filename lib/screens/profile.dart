@@ -1,8 +1,7 @@
 import 'package:filipino_food_scanner/screens/home_screen.dart';
-import 'package:filipino_food_scanner/services/auth_service.dart';
 import 'package:filipino_food_scanner/utils/allergen_database.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -23,14 +22,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _loadUserAllergies() {
-    final authService = context.read<AuthService>();
-    final user = authService.currentUser;
+    final box = Hive.box('userBox');
+    final allergies = box.get('allergies', defaultValue: []);
 
-    if (user != null) {
-      setState(() {
-        _selectedAllergens = Set<String>.from(user.allergies);
-      });
-    }
+    setState(() {
+      _selectedAllergens = Set<String>.from(allergies);
+    });
   }
 
   void _toggleAllergen(String allergen) {
@@ -47,7 +44,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _saveChanges() async {
-    final authService = context.read<AuthService>();
+    final box = Hive.box('userBox');
 
     setState(() => _isEditing = false);
 
@@ -60,46 +57,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
 
-    // Update profile
-    final error = await authService.updateProfile(
-      allergies: _selectedAllergens.toList(),
-    );
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    box.put('allergies', _selectedAllergens.toList());
 
     if (mounted) {
-      Navigator.pop(context); // Close loading
+      Navigator.pop(context); // close loading
+      setState(() => _hasChanges = false);
 
-      if (error == null) {
-        // Success
-        setState(() => _hasChanges = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 10),
-                Text('Allergies updated successfully!'),
-              ],
-            ),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 10),
+              Text('Allergies updated successfully!'),
+            ],
           ),
-        );
-      } else {
-        // Error
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error, color: Colors.white),
-                const SizedBox(width: 10),
-                Expanded(child: Text(error)),
-              ],
-            ),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -113,8 +91,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authService = context.watch<AuthService>();
-    final user = authService.currentUser;
+    final box = Hive.box('userBox');
+    final allergies = box.get('allergies') ?? '';
+    final firstName = box.get('first_name') ?? 'firstName';
+    final middleName = box.get('middle_name') ?? '';
+    final lastName = box.get('last_name') ?? 'lastName';
+
+    final name = "$firstName $middleName $lastName";
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -239,7 +222,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             radius: 50,
                             backgroundColor: Colors.orange.shade100,
                             child: Text(
-                              user?.firstName[0].toUpperCase() ?? 'U',
+                              firstName[0].toUpperCase(),
                               style: TextStyle(
                                 fontSize: 40,
                                 fontWeight: FontWeight.bold,
@@ -250,39 +233,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 15),
                         Text(
-                          user?.fullName ?? 'User',
+                          name,
                           style: const TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
                         ),
-                        const SizedBox(height: 5),
-                        Text(
-                          user?.email ?? '',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.white70,
-                          ),
-                        ),
-                        if (user?.contactNo != null) ...[
-                          const SizedBox(height: 5),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.phone,
-                                  color: Colors.white70, size: 16),
-                              const SizedBox(width: 5),
-                              Text(
-                                user!.contactNo!,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.white70,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                        const SizedBox(height: 5)
                       ],
                     ),
                   ),

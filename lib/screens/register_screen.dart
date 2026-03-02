@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../utils/allergen_database.dart';
@@ -18,13 +19,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _firstNameController = TextEditingController();
   final _middleNameController = TextEditingController();
   final _lastNameController = TextEditingController();
-  final _emailController = TextEditingController();
+  // final _emailController = TextEditingController();
   final _contactController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
+  // final _passwordController = TextEditingController();
+  // final _confirmPasswordController = TextEditingController();
 
-  bool _isPasswordVisible = false;
-  bool _isConfirmPasswordVisible = false;
+  // bool _isPasswordVisible = false;
+  // bool _isConfirmPasswordVisible = false;
 
   // Selected allergens using the 14 standard categories
   Set<String> _selectedAllergens = {};
@@ -66,49 +67,48 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Passwords do not match'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
+    var box = Hive.box('userBox');
 
-    final authService = context.read<AuthService>();
+    box.put('first_name', _firstNameController.text.trim());
+    box.put('middle_name', _middleNameController.text.trim());
+    box.put('last_name', _lastNameController.text.trim());
+    box.put('allergies', _selectedAllergens.toList());
 
-    final error = await authService.register(
-      context: context,
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-      firstName: _firstNameController.text.trim(),
-      middleName: _middleNameController.text.trim().isEmpty
-          ? null
-          : _middleNameController.text.trim(),
-      lastName: _lastNameController.text.trim(),
-      contactNo: _contactController.text.trim().isEmpty
-          ? null
-          : _contactController.text.trim(),
-      allergies: _selectedAllergens.toList(), // Send selected categories
-    );
+    Navigator.pushReplacement(
+        context, MaterialPageRoute(builder: (_) => HomeScreen()));
 
-    if (mounted) {
-      if (error == null) {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return const AlertDialog(
-              title: Text("Success"),
-              content: Text("You have successfully registered!"),
-            );
-          },
-        );
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
-      }
-    }
+    // final authService = context.read<AuthService>();
+
+    // final error = await authService.register(
+    //   context: context,
+    //   email: _emailController.text.trim(),
+    //   firstName: _firstNameController.text.trim(),
+    //   middleName: _middleNameController.text.trim().isEmpty
+    //       ? null
+    //       : _middleNameController.text.trim(),
+    //   lastName: _lastNameController.text.trim(),
+    //   contactNo: _contactController.text.trim().isEmpty
+    //       ? null
+    //       : _contactController.text.trim(),
+    //   allergies: _selectedAllergens.toList(), // Send selected categories
+    // );
+
+    // if (mounted) {
+    //   if (error == null) {
+    //     showDialog(
+    //       context: context,
+    //       builder: (BuildContext context) {
+    //         return const AlertDialog(
+    //           title: Text("Success"),
+    //           content: Text("You have successfully registered!"),
+    //         );
+    //       },
+    //     );
+    //     Navigator.of(context).pushReplacement(
+    //       MaterialPageRoute(builder: (_) => const HomeScreen()),
+    //     );
+    //   }
+    // }
   }
 
   @override
@@ -116,10 +116,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _firstNameController.dispose();
     _middleNameController.dispose();
     _lastNameController.dispose();
-    _emailController.dispose();
+    // _emailController.dispose();
     _contactController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
+    // _passwordController.dispose();
+    // _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -214,64 +214,64 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         },
                       ),
                       const SizedBox(height: 15),
-                      _buildTextField(
-                        controller: _emailController,
-                        label: 'Email',
-                        icon: Icons.email,
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your email';
-                          }
-                          if (!value.contains('@')) {
-                            return 'Please enter a valid email';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 15),
-                      _buildTextField(
-                        controller: _contactController,
-                        label: 'Contact Number (Optional)',
-                        icon: Icons.phone,
-                        keyboardType: TextInputType.phone,
-                      ),
-                      const SizedBox(height: 20),
+                      // _buildTextField(
+                      //   controller: _emailController,
+                      //   label: 'Email',
+                      //   icon: Icons.email,
+                      //   keyboardType: TextInputType.emailAddress,
+                      //   validator: (value) {
+                      //     if (value == null || value.isEmpty) {
+                      //       return 'Please enter your email';
+                      //     }
+                      //     if (!value.contains('@')) {
+                      //       return 'Please enter a valid email';
+                      //     }
+                      //     return null;
+                      //   },
+                      // ),
+                      // const SizedBox(height: 15),
+                      // _buildTextField(
+                      //   controller: _contactController,
+                      //   label: 'Contact Number (Optional)',
+                      //   icon: Icons.phone,
+                      //   keyboardType: TextInputType.phone,
+                      // ),
+                      // const SizedBox(height: 20),
 
                       // Password Fields
-                      _buildPasswordField(
-                        controller: _passwordController,
-                        label: 'Password',
-                        isVisible: _isPasswordVisible,
-                        onToggle: () => setState(
-                            () => _isPasswordVisible = !_isPasswordVisible),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter a password';
-                          }
-                          if (value.length < 6) {
-                            return 'Password must be at least 6 characters';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 15),
-                      _buildPasswordField(
-                        controller: _confirmPasswordController,
-                        label: 'Confirm Password',
-                        isVisible: _isConfirmPasswordVisible,
-                        onToggle: () => setState(() =>
-                            _isConfirmPasswordVisible =
-                                !_isConfirmPasswordVisible),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please confirm your password';
-                          }
-                          return null;
-                        },
-                      ),
+                      // _buildPasswordField(
+                      //   controller: _passwordController,
+                      //   label: 'Password',
+                      //   isVisible: _isPasswordVisible,
+                      //   onToggle: () => setState(
+                      //       () => _isPasswordVisible = !_isPasswordVisible),
+                      //   validator: (value) {
+                      //     if (value == null || value.isEmpty) {
+                      //       return 'Please enter a password';
+                      //     }
+                      //     if (value.length < 6) {
+                      //       return 'Password must be at least 6 characters';
+                      //     }
+                      //     return null;
+                      //   },
+                      // ),
+                      // const SizedBox(height: 15),
+                      // _buildPasswordField(
+                      //   controller: _confirmPasswordController,
+                      //   label: 'Confirm Password',
+                      //   isVisible: _isConfirmPasswordVisible,
+                      //   onToggle: () => setState(() =>
+                      //       _isConfirmPasswordVisible =
+                      //           !_isConfirmPasswordVisible),
+                      //   validator: (value) {
+                      //     if (value == null || value.isEmpty) {
+                      //       return 'Please confirm your password';
+                      //     }
+                      //     return null;
+                      //   },
+                      // ),
 
-                      const SizedBox(height: 25),
+                      // const SizedBox(height: 25),
 
                       // Allergies Section with 14 Categories
                       Container(
@@ -552,35 +552,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
 
                       const SizedBox(height: 25),
-
-                      // Login Link
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text(
-                            "Already have an account?",
-                            style: TextStyle(
-                              color: Color(0xFF2D1B00),
-                              fontSize: 14,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pushReplacement(
-                                MaterialPageRoute(
-                                    builder: (_) => const LoginScreen()),
-                              );
-                            },
-                            child: const Text(
-                              "Login",
-                              style: TextStyle(
-                                color: Colors.orange,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
                     ],
                   ),
                 ),
@@ -618,34 +589,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildPasswordField({
-    required TextEditingController controller,
-    required String label,
-    required bool isVisible,
-    required VoidCallback onToggle,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      obscureText: !isVisible,
-      validator: validator,
-      decoration: InputDecoration(
-        prefixIcon: const Icon(Icons.lock, color: Colors.orange),
-        suffixIcon: IconButton(
-          icon: Icon(isVisible ? Icons.visibility : Icons.visibility_off,
-              color: Colors.orange),
-          onPressed: onToggle,
-        ),
-        hintText: label,
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding:
-            const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide.none,
-        ),
-      ),
-    );
-  }
+  // Widget _buildPasswordField({
+  //   required TextEditingController controller,
+  //   required String label,
+  //   required bool isVisible,
+  //   required VoidCallback onToggle,
+  //   String? Function(String?)? validator,
+  // }) {
+  //   return TextFormField(
+  //     controller: controller,
+  //     obscureText: !isVisible,
+  //     validator: validator,
+  //     decoration: InputDecoration(
+  //       prefixIcon: const Icon(Icons.lock, color: Colors.orange),
+  //       suffixIcon: IconButton(
+  //         icon: Icon(isVisible ? Icons.visibility : Icons.visibility_off,
+  //             color: Colors.orange),
+  //         onPressed: onToggle,
+  //       ),
+  //       hintText: label,
+  //       filled: true,
+  //       fillColor: Colors.white,
+  //       contentPadding:
+  //           const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+  //       border: OutlineInputBorder(
+  //         borderRadius: BorderRadius.circular(15),
+  //         borderSide: BorderSide.none,
+  //       ),
+  //     ),
+  //   );
+  // }
 }
